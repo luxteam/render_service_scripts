@@ -10,13 +10,20 @@ logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO,
 shutil.register_unpack_format('7zip', ['.7z'], unpack_7zarchive)
 
 
-def unpack_scene():
-    for entry in os.scandir('..'):
+def unpack_scene(scene_name):
+    try:
+        logging.info('Unpack {}'.format(scene_name))
+        shutil.unpack_archive(scene_name, '.')
+    except Exception as e:
+        logging.error(str(e))
+        logging.error('No such archive')
+
+
+def unpack_all(dir):
+    for entry in os.scandir(dir):
         if entry.name.endswith('.zip') or entry.name.endswith('.7z'):
-            logging.info('Unpack {}'.format(entry.name))
-            shutil.unpack_archive(entry.name, '.')
-    logging.info('No one archive')
+            unpack_scene(entry)
 
 
 if __name__ == '__main__':
-    unpack_scene()
+    unpack_scene('..')

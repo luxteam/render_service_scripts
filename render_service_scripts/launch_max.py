@@ -99,6 +99,7 @@ def main():
 	parser.add_argument('--endFrame', required=True)
 	parser.add_argument('--width', required=True)
 	parser.add_argument('--height', required=True)
+	parser.add_argument('--scene_name', required=True)
 	args = parser.parse_args()
 
 	# create output folder for images and logs
@@ -106,7 +107,7 @@ def main():
 		os.makedirs('Output')
 
 	# unpack all archives
-	unpack_scene()
+	unpack_scene(args.scene_name)
 	# find all blender scenes
 	max_scene = find_max_scene()
 	logger.info("Found scene: {}".format(max_scene))
