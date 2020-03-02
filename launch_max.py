@@ -8,6 +8,7 @@ import ctypes
 import requests
 import glob
 import logging
+from unpack import unpack_scene
 
 # logging
 logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')
@@ -104,6 +105,8 @@ def main():
 	if not os.path.exists('Output'):
 		os.makedirs('Output')
 
+	# unpack all archives
+	unpack_scene()
 	# find all blender scenes
 	max_scene = find_max_scene()
 	logger.info("Found scene: {}".format(max_scene))

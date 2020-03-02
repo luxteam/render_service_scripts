@@ -7,6 +7,7 @@ import requests
 import glob
 import os
 import logging
+from unpack import unpack_scene
 
 # logging
 logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')
@@ -119,6 +120,8 @@ def main():
 	if not os.path.exists('Output'):
 		os.makedirs('Output')
 
+	# unpack all archives
+	unpack_scene()
 	# find all blender scenes
 	maya_scene = find_maya_scene()
 	logger.info("Found scene: {}".format(maya_scene))

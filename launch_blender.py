@@ -7,6 +7,7 @@ import requests
 import glob
 import os
 import logging
+from unpack import unpack_scene
 
 # logging
 logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')
@@ -80,7 +81,9 @@ def main():
 	# create output folder for images and logs
 	if not os.path.exists('Output'):
 		os.makedirs('Output')
-	
+
+	# unpack all archives
+	unpack_scene()
 	# find all blender scenes
 	blender_scene = find_blender_scene()
 	logger.info("Found scene: {}".format(blender_scene))
