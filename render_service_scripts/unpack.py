@@ -11,12 +11,13 @@ shutil.register_unpack_format('7zip', ['.7z'], unpack_7zarchive)
 
 
 def unpack_scene(scene_name):
-    try:
-        logging.info('Unpack {}'.format(scene_name))
-        shutil.unpack_archive(scene_name, '.')
-    except Exception as e:
-        logging.error(str(e))
-        logging.error('No such archive')
+    if scene_name.endswith('.zip') or scene_name.endswith('.7z'):
+        try:
+            logging.info('Unpack {}'.format(scene_name))
+            shutil.unpack_archive(scene_name, '.')
+        except Exception as e:
+            logging.error(str(e))
+            logging.error('No such archive')
 
 
 def unpack_all(dir):
