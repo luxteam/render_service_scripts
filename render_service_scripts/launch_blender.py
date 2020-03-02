@@ -7,7 +7,7 @@ import requests
 import glob
 import os
 import logging
-from unpack import unpack_scene
+from render_service_scripts.unpack import unpack_scene
 
 # logging
 logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')

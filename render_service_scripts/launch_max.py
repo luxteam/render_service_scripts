@@ -1,42 +1,27 @@
 import argparse
+import sys
+import os
 import subprocess
 import psutil
 import json
 import ctypes
 import requests
 import glob
-import os
 import logging
-from unpack import unpack_scene
+from render_service_scripts.unpack import unpack_scene
 
 # logging
 logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')
 logger = logging.getLogger(__name__)
 
 
-def update_license(file):
-	with open(file) as f:
-		scene_file = f.read()
-
-	license = "fileInfo \"license\" \"student\";"
-	scene_file = scene_file.replace(license, '')
-
-	with open(file, "w") as f:
-		f.write(scene_file)
-
-
-def find_maya_scene():
+def find_max_scene():
 	scene = []
 	for rootdir, dirs, files in os.walk(os.getcwd()):
 		for file in files:
-			if file.endswith('.ma') or file.endswith('mb'):
-				try:
-					update_license(os.path.join(rootdir, file))
-				except Exception:
-					pass
+			if file.endswith('.max'):
 				scene.append(os.path.join(rootdir, file))
-
-	scene[0] = scene[0].replace("\\", "/")
+	scene[0] = scene[0].replace("\\", "\\\\")
 	return scene[0]
 
 
@@ -123,50 +108,36 @@ def main():
 	# unpack all archives
 	unpack_scene()
 	# find all blender scenes
-	maya_scene = find_maya_scene()
-	logger.info("Found scene: {}".format(maya_scene))
-	
-	current_path_for_maya = os.getcwd().replace("\\", "/") + "/"
+	max_scene = find_max_scene()
+	logger.info("Found scene: {}".format(max_scene))
 
-	# detect project path
-	files = os.listdir(os.getcwd())
-	zip_file = False
-	for file in files:
-		if file.endswith(".zip") or file.endswith(".7z"):
-			zip_file = True
-			project = "/".join(maya_scene.split("/")[:-2])
-			
-	if not zip_file:
-		project = current_path_for_maya
+	current_path_for_max = os.getcwd().replace("\\", "\\\\")
 
 	# read maya template
-	with open("maya_render.py") as f:
-		maya_script_template = f.read()
+	with open("max_render.ms") as f:
+		max_script_template = f.read()
 	
-	maya_script = maya_script_template.format(min_samples=args.min_samples, max_samples=args.max_samples, noise_threshold=args.noise_threshold, \
-		width = args.width, height = args.height, res_path=current_path_for_maya, startFrame=args.startFrame, endFrame=args.endFrame, scene_path=maya_scene, project=project)
+	max_script = max_script_template.format(min_samples=args.min_samples, max_samples=args.max_samples, noise_threshold=args.noise_threshold, \
+		width = args.width, height = args.height, res_path=current_path_for_max, startFrame=args.startFrame, endFrame=args.endFrame, scene_path=max_scene)
 
 	# scene name
-	filename = os.path.basename(maya_scene).split(".")[0]
+	filename = os.path.basename(max_scene).split(".")[0]
 
 	# save render py file
-	render_file = "render_{}.py".format(filename) 
+	render_file = "render_{}.ms".format(filename) 
 	with open(render_file, 'w') as f:
-		f.write(maya_script)
+		f.write(max_script)
 
 	# save bat file
 	cmd_command = '''
-		set MAYA_CMD_FILE_OUTPUT=%cd%/Output/render_log.txt
-		set MAYA_SCRIPT_PATH=%cd%;%MAYA_SCRIPT_PATH%
-		set PYTHONPATH=%cd%;%PYTHONPATH%
-		"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Maya.exe" -command "python(\\"import {render_file} as render\\"); python(\\"render.main()\\");" 
-		'''.format(tool=args.tool, render_file=render_file.split('.')[0])
+		"C:\\Program Files\\Autodesk\\3ds Max {tool}\\3dsmax.exe" -U MAXScript "{render_file}" -silent
+		'''.format(tool=args.tool, render_file=render_file)
 	render_bat_file = "launch_render_{}.bat".format(filename)
 	with open(render_bat_file, 'w') as f:
 		f.write(cmd_command)
 
 	# starting rendering
-	logger.info("Starting rendering scene: {}".format(maya_scene))
+	logger.info("Starting rendering scene: {}".format(max_scene))
 	post_data = {'status': 'Rendering', 'id': args.id}
 	send_status(post_data, args.django_ip)
 
@@ -182,7 +153,9 @@ def main():
 			stdout, stderr = p.communicate(timeout=30)
 		except (subprocess.TimeoutExpired, psutil.TimeoutExpired) as err:
 			total_timeout -= 1
-			fatal_errors_titles = ['maya', 'Student Version File', 'Radeon ProRender Error', 'Script Editor', 'File contains mental ray nodes']
+			fatal_errors_titles = ['Radeon ProRender', 'AMD Radeon ProRender debug assert', os.getcwd() + ' - MAXScript',\
+			'3ds Max', 'Microsoft Visual C++ Runtime Library', \
+			'3ds Max Error Report', '3ds Max application', 'Radeon ProRender Error', 'Image I/O Error', 'Warning', 'Error']
 			error_window = set(fatal_errors_titles).intersection(get_windows_titles())
 			if error_window:
 				rc = -1
@@ -196,8 +169,9 @@ def main():
 		else:
 			break
 
+
 	# update render status
-	logger.info("Finished rendering scene: {}".format(maya_scene))
+	logger.info("Finished rendering scene: {}".format(max_scene))
 	post_data = {'status': 'Completed', 'id': args.id}
 	send_status(post_data, args.django_ip)
 
