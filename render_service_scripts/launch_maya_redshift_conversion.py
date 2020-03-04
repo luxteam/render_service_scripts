@@ -123,11 +123,15 @@ def main():
 	parser.add_argument('--id', required=True)
 	parser.add_argument('--build_number', required=True)
 	parser.add_argument('--tool', required=True)
+	parser.add_argument('--scene_name', required=True)
 	args = parser.parse_args()
 
 	# create output folder for images and logs
 	if not os.path.exists('Output'):
 		os.makedirs('Output')
+
+	# unpack all archives
+	unpack_scene(args.scene_name)
 	
 	# find all blender scenes
 	maya_scene = find_maya_scene()
