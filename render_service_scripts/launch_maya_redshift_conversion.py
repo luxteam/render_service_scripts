@@ -221,7 +221,7 @@ def main():
 	cmd_command = '''
 		set MAYA_CMD_FILE_OUTPUT=%cd%/Output/rpr_render_log.txt
 		set MAYA_SCRIPT_PATH=%cd%;%MAYA_SCRIPT_PATH%
-		set PYTHONPATH=%cd%;%PYTHONPATH%
+		set PYTHONPATH=%cd%;%cd%/RS2RPRConvertTool;%PYTHONPATH%
 		"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Maya.exe" -command "python(\\"import {render_rpr_file} as render\\"); python(\\"render.main()\\");" 
 		'''.format(tool=args.tool, render_rpr_file=render_rpr_file.split('.')[0])
 	render_bat_file = "launch_rpr_render_{}.bat".format(filename)
