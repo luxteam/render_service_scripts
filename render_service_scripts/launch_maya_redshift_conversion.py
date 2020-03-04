@@ -167,7 +167,7 @@ def main():
 		set PYTHONPATH=%cd%;%PYTHONPATH%
 		"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -r redshift -preRender "python(\\"import {redshift_render_file} as render\\"); python(\\"render.main()\\");" -log "Output\\batch_redshift_render_log.txt" -of jpg {maya_scene}
 		'''.format(tool=args.tool, maya_scene=maya_scene, redshift_render_file=redshift_render_file.split('.')[0])
-	render_bat_file = "launch_render_{}.bat".format(filename)
+	render_bat_file = "launch_redshift_render_{}.bat".format(filename)
 	with open(render_bat_file, 'w') as f:
 		f.write(cmd_command)		
 
@@ -224,7 +224,7 @@ def main():
 		set PYTHONPATH=%cd%;%PYTHONPATH%
 		"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Maya.exe" -command "python(\\"import {render_rpr_file} as render\\"); python(\\"render.main()\\");" 
 		'''.format(tool=args.tool, render_rpr_file=render_rpr_file.split('.')[0])
-	render_bat_file = "launch_render_{}.bat".format(filename)
+	render_bat_file = "launch_rpr_render_{}.bat".format(filename)
 	with open(render_bat_file, 'w') as f:
 		f.write(cmd_command)
 
