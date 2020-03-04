@@ -80,10 +80,10 @@ def send_results(post_data, files, django_ip):
 			logger.info("POST request failed. Retry ...")
 
 
-def get_rs_render_time(log_name):
+def get_ai_render_time(log_name):
 	with open(log_name, 'r') as file:
 		for line in file.readlines():
-			if "[Redshift] Rendering done - total time for 1 frames:" in line:
+			if "[Arnold] Rendering done - total time for 1 frames:" in line:
 				time_s = line.split(": ")[-1]
 
 				try:
@@ -136,7 +136,7 @@ def main():
 		project = current_path_for_maya
 
 	# read maya template
-	with open("redshift_render.py") as f:
+	with open("arnold_render.py") as f:
 		maya_script_template = f.read()
 
 	maya_script = maya_script_template.format(min_samples=args.min_samples, max_samples=args.max_samples, noise_threshold=args.noise_threshold, \
@@ -155,7 +155,7 @@ def main():
 		set MAYA_CMD_FILE_OUTPUT=%cd%/Output/maya_render_log.txt
 		set MAYA_SCRIPT_PATH=%cd%;%MAYA_SCRIPT_PATH%
 		set PYTHONPATH=%cd%;%PYTHONPATH%
-		"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -r redshift -preRender "python(\\"import {render_file} as render\\"); python(\\"render.main()\\");" -log "Output\\batch_render_log.txt" -of jpg {maya_scene}
+		"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -r arnold -preRender "python(\\"import {render_file} as render\\"); python(\\"render.main()\\");" -log "Output\\batch_render_log.txt" -of jpg {maya_scene}
 		'''.format(tool=args.tool, maya_scene=maya_scene, render_file=render_file.split('.')[0])
 	render_bat_file = "launch_render_{}.bat".format(filename)
 	with open(render_bat_file, 'w') as f:
