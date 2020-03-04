@@ -1,4 +1,4 @@
-import convertRS2RPR
+from RS2RPRConvertTool import convertRS2RPR
 import os
 import maya.cmds as cmds
 import maya.mel as mel
