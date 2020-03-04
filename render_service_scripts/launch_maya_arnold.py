@@ -109,6 +109,7 @@ def main():
 	parser.add_argument('--endFrame', required=True)
 	parser.add_argument('--width', required=True)
 	parser.add_argument('--height', required=True)
+	parser.add_argument('--scene_name', required=True)
 	args = parser.parse_args()
 
 	# create output folder for images and logs
