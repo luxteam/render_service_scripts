@@ -115,6 +115,7 @@ def main():
 	parser.add_argument('--width', required=True)
 	parser.add_argument('--height', required=True)
 	parser.add_argument('--scene_name', required=True)
+	parser.add_argument('--batchRender', required=True)
 	args = parser.parse_args()
 
 	# create output folder for images and logs
@@ -156,12 +157,20 @@ def main():
 		f.write(maya_script)
 
 	# save bat file
-	cmd_command = '''
-		set MAYA_CMD_FILE_OUTPUT=%cd%/Output/render_log.txt
-		set MAYA_SCRIPT_PATH=%cd%;%MAYA_SCRIPT_PATH%
-		set PYTHONPATH=%cd%;%PYTHONPATH%
-		"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Maya.exe" -command "python(\\"import {render_file} as render\\"); python(\\"render.main()\\");" 
-		'''.format(tool=args.tool, render_file=render_file.split('.')[0])
+	if (bool(args.batchRender)):
+		cmd_command = '''
+			set MAYA_CMD_FILE_OUTPUT=%cd%/Output/render_log.txt
+			set MAYA_SCRIPT_PATH=%cd%;%MAYA_SCRIPT_PATH%
+			set PYTHONPATH=%cd%;%PYTHONPATH%
+			"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -preRender "python(\\"import {render_file} as render\\"); python(\\"render.main()\\");" -log "Output\\batch_render_log.txt" -of jpg {maya_scene} 
+			'''.format(tool=args.tool, render_file=render_file.split('.')[0], maya_scene=maya_scene)
+	else:
+		cmd_command = '''
+			set MAYA_CMD_FILE_OUTPUT=%cd%/Output/render_log.txt
+			set MAYA_SCRIPT_PATH=%cd%;%MAYA_SCRIPT_PATH%
+			set PYTHONPATH=%cd%;%PYTHONPATH%
+			"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Maya.exe" -command "python(\\"import {render_file} as render\\"); python(\\"render.main()\\");" 
+			'''.format(tool=args.tool, render_file=render_file.split('.')[0])
 	render_bat_file = "launch_render_{}.bat".format(filename)
 	with open(render_bat_file, 'w') as f:
 		f.write(cmd_command)
