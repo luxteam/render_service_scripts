@@ -157,7 +157,7 @@ def main():
 		f.write(maya_script)
 
 	# save bat file
-	if (bool(args.batchRender)):
+	if (args.batchRender == "true"):
 		cmd_command = '''
 			set MAYA_CMD_FILE_OUTPUT=%cd%/Output/render_log.txt
 			set MAYA_SCRIPT_PATH=%cd%;%MAYA_SCRIPT_PATH%
