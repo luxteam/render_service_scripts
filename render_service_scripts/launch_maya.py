@@ -7,7 +7,9 @@ import requests
 import glob
 import os
 import logging
+import datetime
 from render_service_scripts.unpack import unpack_scene
+from pathlib import Path
 
 # logging
 logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')
@@ -142,8 +144,12 @@ def main():
 		project = current_path_for_maya
 
 	# read maya template
-	with open("maya_render.py") as f:
-		maya_script_template = f.read()
+	if args.batchRender == "true":
+		with open("maya_batch_render.py") as f:
+			maya_script_template = f.read()
+	else:
+		with open("maya_render.py") as f:
+			maya_script_template = f.read()
 	
 	maya_script = maya_script_template.format(min_samples=args.min_samples, max_samples=args.max_samples, noise_threshold=args.noise_threshold, \
 		width = args.width, height = args.height, res_path=current_path_for_maya, startFrame=args.startFrame, endFrame=args.endFrame, scene_path=maya_scene, project=project)
@@ -157,13 +163,13 @@ def main():
 		f.write(maya_script)
 
 	# save bat file
-	if (args.batchRender == "true"):
+	if args.batchRender == "true":
 		cmd_command = '''
 			set MAYA_CMD_FILE_OUTPUT=%cd%/Output/render_log.txt
 			set MAYA_SCRIPT_PATH=%cd%;%MAYA_SCRIPT_PATH%
 			set PYTHONPATH=%cd%;%PYTHONPATH%
-			"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -preRender "python(\\"import {render_file} as render\\"); python(\\"render.main()\\");" -log "Output\\batch_render_log.txt" -of jpg {maya_scene} 
-			'''.format(tool=args.tool, render_file=render_file.split('.')[0], maya_scene=maya_scene)
+			"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -r FireRender -s {start_frame} -e {end_frame} -preRender "python(\\"import {render_file} as render\\"); python(\\"render.main()\\");" -log "Output\\batch_render_log.txt" -of jpg {maya_scene} 
+			'''.format(tool=args.tool, render_file=render_file.split('.')[0], maya_scene=maya_scene, start_frame=args.startFrame, end_frame=args.endFrame)
 	else:
 		cmd_command = '''
 			set MAYA_CMD_FILE_OUTPUT=%cd%/Output/render_log.txt
@@ -181,6 +187,8 @@ def main():
 	send_status(post_data, args.django_ip)
 
 	# start render
+	render_time = 0
+	start_time = datetime.datetime.now()
 	p = psutil.Popen(render_bat_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 	# catch timeout ~30 minutes
@@ -206,10 +214,36 @@ def main():
 		else:
 			break
 
+	render_time += (datetime.datetime.now() - start_time).total_seconds()
+
+	if args.batchRender == "true" and args.startFrame != args.endFrame:
+		# fix RPR bug with output files naming
+		current_path = str(Path().absolute())
+		output_path = os.path.join(current_path, "Output")
+		files = os.listdir(output_path)
+
+		for file in files:
+			if not file.endswith(".txt"):
+				# name.extentions.number -> name_number.extention
+				name_parts = file.rsplit(".", 2)
+				new_name = name_parts[-3] + "_" + name_parts[-1] + "." + name_parts[-2]
+				os.rename(os.path.join(output_path, file), os.path.join(output_path, new_name))
+
 	# update render status
 	logger.info("Finished rendering scene: {}".format(maya_scene))
 	post_data = {'status': 'Completed', 'id': args.id}
 	send_status(post_data, args.django_ip)
+
+	if args.batchRender == "true":
+		# add render time for batch render
+		if os.path.exists("render_info.json"):
+			with open("render_info.json") as f:
+				data = json.loads(f.read())
+
+			data = json['render_time'] = round(render_time, 2)
+
+			with open("render_info.json", "w") as ff:
+    			json.dump(data, f, indent=4)
 
 	# send render info
 	logger.info("Sending render info")
