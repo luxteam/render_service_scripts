@@ -216,7 +216,7 @@ def main():
 
 	render_time += (datetime.datetime.now() - start_time).total_seconds()
 
-	if args.batchRender == "true" and args.startFrame != args.endFrame:
+	if args.batchRender == "true":
 		# fix RPR bug with output files naming
 		current_path = str(Path().absolute())
 		output_path = os.path.join(current_path, "Output")
@@ -240,9 +240,9 @@ def main():
 			with open("render_info.json") as f:
 				data = json.loads(f.read())
 
-			data = json['render_time'] = round(render_time, 2)
+			data['render_time'] = round(render_time, 2)
 
-			with open("render_info.json", "w") as ff:
+			with open("render_info.json", "w") as f:
 				json.dump(data, f, indent=4)
 
 	# send render info
