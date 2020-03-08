@@ -243,7 +243,7 @@ def main():
 			data = json['render_time'] = round(render_time, 2)
 
 			with open("render_info.json", "w") as ff:
-    			json.dump(data, f, indent=4)
+				json.dump(data, f, indent=4)
 
 	# send render info
 	logger.info("Sending render info")
