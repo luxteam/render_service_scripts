@@ -143,7 +143,7 @@ def main():
 	
 	# catch timeout ~30 minutes
 	rc = 0
-	timeout = 20
+	timeout = 2000
 	start_time = datetime.datetime.now()
 	samples_per_frame = 0
 	rendered = 0
