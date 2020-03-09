@@ -8,6 +8,9 @@ import glob
 import os
 import logging
 import datetime
+import threading
+from time import sleep
+from file_read_backwards import FileReadBackwards
 from render_service_scripts.unpack import unpack_scene
 from pathlib import Path
 
@@ -102,6 +105,30 @@ def get_windows_titles():
 	return titles
 
 
+def start_monitor_render_thread(args):
+	post_data = {'status': 'Rendering', 'id': args.id}
+	send_status(post_data, args.django_ip)
+	thread = threading.currentThread()
+	delay = 10
+	log_file = os.path.join('Output', "batch_render_log.txt")
+	all_frames = int(args.endFrame) - int(args.startFrame) + 1
+	while getattr(thread, "run", True):
+		try :
+			with FileReadBackwards(log_file, encoding="utf-8") as file:
+				for line in file:
+					if "Percentage of rendering done" in line:
+						frame_number = int(line.split("(", 1)[1].split(",", 1)[0].split(" ", 1)[1])
+						current_percentage = int(line.rsplit(":", 1)[1].strip().split(" ", 1)[0])
+						rendered = ((frame_number - int(args.startFrame)) * 100 + current_percentage) / (all_frames * 100) * 100
+						status = 'Rendering ( ' + str(round(rendered, 2)) + '% )'
+						post_data = {'status': status, 'id': args.id}
+						send_status(post_data, args.django_ip)
+						break
+		except FileNotFoundError:
+			pass
+		sleep(10)
+
+
 def main():
 
 	parser = argparse.ArgumentParser()
@@ -186,6 +213,11 @@ def main():
 	post_data = {'status': 'Rendering', 'id': args.id}
 	send_status(post_data, args.django_ip)
 
+	# start render monitoring thread
+	if args.batchRender == "true":
+		monitoring_thread = threading.Thread(target=start_monitor_render_thread, args=(args, ))
+		monitoring_thread.start()
+
 	# start render
 	render_time = 0
 	start_time = datetime.datetime.now()
@@ -213,6 +245,11 @@ def main():
 				break
 		else:
 			break
+
+	# stop render monitoring thread
+	if args.batchRender == "true":
+		monitoring_thread.run = False
+		monitoring_thread.join()
 
 	render_time += (datetime.datetime.now() - start_time).total_seconds()
 
