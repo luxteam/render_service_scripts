@@ -168,7 +168,7 @@ def main():
 			set MAYA_CMD_FILE_OUTPUT=%cd%/Output/render_log.txt
 			set MAYA_SCRIPT_PATH=%cd%;%MAYA_SCRIPT_PATH%
 			set PYTHONPATH=%cd%;%PYTHONPATH%
-			"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -r FireRender -s {start_frame} -e {end_frame} -preRender "python(\\"import {render_file} as render\\"); python(\\"render.main()\\");" -log "Output\\batch_render_log.txt" -of jpg {maya_scene} 
+			"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -r FireRender -s {start_frame} -e {end_frame} -rgb true -preRender "python(\\"import {render_file} as render\\"); python(\\"render.main()\\");" -log "Output\\batch_render_log.txt" -of jpg {maya_scene} 
 			'''.format(tool=args.tool, render_file=render_file.split('.')[0], maya_scene=maya_scene, start_frame=args.startFrame, end_frame=args.endFrame)
 	else:
 		cmd_command = '''
