@@ -235,16 +235,14 @@ def main():
 	send_status(post_data, args.django_ip)
 
 	if args.batchRender == "true":
-		# save render info
-		report = {}
-		report['render_time'] = round(render_time, 2)
-		report['width'] = args.width
-		report['height'] = args.height
-		report['min_samples'] = args.min_samples
-		report['max_samples'] = args.max_samples
-		report['noise_threshold'] = args.noise_threshold
-		with open(os.path.join(".", "render_info.json"), 'w') as f:
-			json.dump(report, f, indent=4)
+		# add render time to render info
+		with open(os.path.join(".", "render_info.json"), "r") as file:
+			data = json.load(file)
+
+		data["render_time"] = round(render_time, 2)
+
+		with open(os.path.join(".", "render_info.json"), "w") as file:
+			json.dump(data, file)
 
 	# send render info
 	logger.info("Sending render info")

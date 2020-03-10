@@ -44,3 +44,13 @@ def rpr_render():
 def main():
     resolveFilePath()
     rpr_render()
+
+    # results json
+    report = {{}}
+    report['width'] = cmds.getAttr("defaultResolution.width")
+    report['height'] = cmds.getAttr("defaultResolution.height")
+    report['min_samples'] = cmds.getAttr("redshiftOptions.unifiedMinSamples")
+    report['max_samples'] = cmds.getAttr("redshiftOptions.unifiedMaxSamples")
+    report['noise_threshold'] = cmds.getAttr("redshiftOptions.unifiedAdaptiveErrorThreshold")
+    with open(os.path.join(".", "render_info.json"), 'w') as f:
+        json.dump(report, f, indent=4)
