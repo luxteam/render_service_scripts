@@ -195,7 +195,7 @@ def main():
 			set MAYA_CMD_FILE_OUTPUT=%cd%/Output/render_log.txt
 			set MAYA_SCRIPT_PATH=%cd%;%MAYA_SCRIPT_PATH%
 			set PYTHONPATH=%cd%;%PYTHONPATH%
-			"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -r FireRender -s {start_frame} -e {end_frame} -preRender "python(\\"import {render_file} as render\\"); python(\\"render.main()\\");" -log "Output\\batch_render_log.txt" -of jpg {maya_scene} 
+			"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -r FireRender -s {start_frame} -e {end_frame} -rgb true -preRender "python(\\"import {render_file} as render\\"); python(\\"render.main()\\");" -log "Output\\batch_render_log.txt" -of jpg {maya_scene} 
 			'''.format(tool=args.tool, render_file=render_file.split('.')[0], maya_scene=maya_scene, start_frame=args.startFrame, end_frame=args.endFrame)
 	else:
 		cmd_command = '''
@@ -272,16 +272,14 @@ def main():
 	send_status(post_data, args.django_ip)
 
 	if args.batchRender == "true":
-		# save render info
-		report = {}
-		report['render_time'] = round(render_time, 2)
-		report['width'] = args.width
-		report['height'] = args.height
-		report['min_samples'] = args.min_samples
-		report['max_samples'] = args.max_samples
-		report['noise_threshold'] = args.noise_threshold
-		with open(os.path.join(".", "render_info.json"), 'w') as f:
-			json.dump(report, f, indent=4)
+		# add render time to render info
+		with open(os.path.join(".", "render_info.json"), "r") as file:
+			data = json.load(file)
+
+		data["render_time"] = round(render_time, 2)
+
+		with open(os.path.join(".", "render_info.json"), "w") as file:
+			json.dump(data, file)
 
 	# send render info
 	logger.info("Sending render info")
