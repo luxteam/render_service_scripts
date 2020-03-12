@@ -145,7 +145,6 @@ def main():
 	rc = 0
 	timeout = 2000
 	start_time = datetime.datetime.now()
-	samples_per_frame = 0
 	rendered = 0
 	with open(os.path.join('Output', "render_log.txt"), 'w', encoding='utf-8') as file:
 		while (datetime.datetime.now() - start_time).total_seconds() <= timeout:
@@ -155,11 +154,10 @@ def main():
 				file.write(line)
 				file.write("\n")
 				if line.startswith("Fra") and "Samples" in line:
-					if samples_per_frame == 0:
-						samples_per_frame = int(line.rsplit("|", 1)[-1].strip().rsplit(" ", 1)[-1].split("/")[1])
-						all_samples = int(samples_per_frame * (int(args.endFrame) - int(args.startFrame) + 1))
+					samples_per_frame = int(line.split("|")[3].strip().rsplit(" ", 1)[-1].split("/")[1])
+					all_samples = int(samples_per_frame * (int(args.endFrame) - int(args.startFrame) + 1))
 					frame_number = int(line.split(" ", 1)[0].split(":")[1])
-					current_samples = int(line.rsplit("|", 1)[-1].strip().rsplit(" ", 1)[-1].split("/")[0])
+					current_samples = int(line.rsplit("|")[3].strip().rsplit(" ", 1)[-1].split("/")[0])
 					if frame_number >= int(args.startFrame):
 						rendered = (samples_per_frame * (frame_number - int(args.startFrame)) + current_samples) / all_samples * 100
 			if p.poll() is not None:
