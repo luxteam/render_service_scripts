@@ -5,6 +5,7 @@ import subprocess
 import psutil
 import logging
 import traceback
+from render_service_scripts.unpack import unpack_all
 
 # logging
 logging.basicConfig(filename="python_log.txt", level=logging.INFO)
@@ -15,13 +16,15 @@ def main():
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--scene_name')
-	parser.add_argument('--scene_version')
 	parser.add_argument('--version')
 	parser.add_argument('--width')
 	parser.add_argument('--height')
 	parser.add_argument('--engine')
 	parser.add_argument('--iterations')
 	args = parser.parse_args()
+
+	# unpack all archives
+	unpack_all(os.path.abspath(os.getcwd()), delete=True)
 
 	# find GLTF scene and UIConfig
 	gltf_file = ""
