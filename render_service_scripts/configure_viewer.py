@@ -100,7 +100,7 @@ def main():
 	if not repeat_launch:
 		build_viewer_pack(args.version, filename)
 
-	config['save_frames'] = "yes"
+	config['save_frames'] = True
 	config['iterations_per_frame'] = int(args.iterations)
 	config['frame_exit_after'] = 1
 	with open(os.path.join('viewer_dir', 'config.json'), 'w') as f:
