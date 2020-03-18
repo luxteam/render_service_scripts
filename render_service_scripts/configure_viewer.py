@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 def build_viewer_pack(version, filename):
 		try:
 			zip_name = "RPRViewerPack_{}_{}".format(version, filename)	
-			shutil.make_archive(zip_name, 'zip', 'scene')
+			shutil.make_archive(zip_name, 'zip', 'viewer_dir')
 		except Exception as ex:
 			logger.error("Zip package build failed.")
 			logger.error(str(ex))
@@ -39,7 +39,7 @@ def main():
 	gltf_file = ""
 	ui_config = ""
 	
-	for rootdir, dirs, files in os.walk("scene"):
+	for rootdir, dirs, files in os.walk(os.path.join('viewer_dir', 'scene')):
 		for file in files:
 			if file.endswith('.gltf'):
 				gltf_file = os.path.join("scene", file)
@@ -59,10 +59,10 @@ def main():
 		logger.error("No UI config in the package!")
 
 	# read config json file
-	if os.path.isfile("config.json"):
+	if os.path.isfile(os.path.join('viewer_dir', 'config.json')):
 		logger.info("Found config file.")
 		try:
-			with open("config.json") as f:
+			with open(os.path.join('viewer_dir', 'config.json')) as f:
 				config = json.loads(f.read())
 			logger.info("Config file was read successfuly.")
 		except Exception as ex:
@@ -85,7 +85,7 @@ def main():
 		
 	config['uiConfig'] = ui_config
 
-	with open('config.json', 'w') as f:
+	with open(os.path.join('viewer_dir', 'config.json'), 'w') as f:
 		json.dump(config, f, indent=' ', sort_keys=True)
 		
 	# parse scene name
@@ -103,14 +103,14 @@ def main():
 	config['save_frames'] = "yes"
 	config['iterations_per_frame'] = int(args.iterations)
 	config['frame_exit_after'] = 1
-	with open('config.json', 'w') as f:
+	with open(os.path.join('viewer_dir', 'config.json'), 'w') as f:
 		json.dump(config, f, indent=' ')
 	
 	# Fix empty stdout 113 line.
 	stdout, stderr = (b'', b'')
 
-	if os.path.isfile("RadeonProViewer.exe"):
-		p = psutil.Popen("RadeonProViewer.exe", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	if os.path.isfile(os.path.join('viewer_dir', 'RadeonProViewer.exe')):
+		p = psutil.Popen(os.path.join('viewer_dir', 'RadeonProViewer.exe'), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		try:
 			stdout, stderr = p.communicate(timeout=300)
 		except (subprocess.TimeoutExpired, psutil.TimeoutExpired) as err:
@@ -144,7 +144,7 @@ def main():
 if __name__ == "__main__":
 	try_count = 0
 	# unpack all archives
-	unpack_all(os.getcwd(), delete=True)
+	unpack_all(os.path.join('.', 'viewer_dir'), delete=True, output_dir=os.path.join('.', 'viewer_dir'))
 	while try_count < 3:
 		try:
 			main()
