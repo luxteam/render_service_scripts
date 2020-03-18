@@ -24,7 +24,7 @@ def main():
 	args = parser.parse_args()
 
 	# unpack all archives
-	unpack_all(os.path.abspath(os.getcwd()), delete=True)
+	unpack_all(os.getcwd(), delete=True)
 
 	# find GLTF scene and UIConfig
 	gltf_file = ""

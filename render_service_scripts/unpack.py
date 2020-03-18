@@ -26,7 +26,7 @@ def unpack_scene(scene_name, delete=False):
 def unpack_all(dir, delete=False):
     for entry in os.scandir(dir):
         if entry.name.endswith('.zip') or entry.name.endswith('.7z'):
-            unpack_scene(entry, delete)
+            unpack_scene(entry.path, delete)
 
 
 if __name__ == '__main__':
