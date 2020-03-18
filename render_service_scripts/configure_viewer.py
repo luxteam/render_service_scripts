@@ -109,8 +109,11 @@ def main():
 	# Fix empty stdout 113 line.
 	stdout, stderr = (b'', b'')
 
-	if os.path.isfile(os.path.join('viewer_dir', 'RadeonProViewer.exe')):
-		p = psutil.Popen(os.path.join('viewer_dir', 'RadeonProViewer.exe'), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	#change dir before call viewer (it search config in current dir)
+	os.chdir('viewer_dir')
+
+	if os.path.isfile('RadeonProViewer.exe'):
+		p = psutil.Popen('RadeonProViewer.exe', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		try:
 			stdout, stderr = p.communicate(timeout=300)
 		except (subprocess.TimeoutExpired, psutil.TimeoutExpired) as err:
@@ -140,6 +143,9 @@ def main():
 	else:
 		logger.error("Failed! No exe file in package.")
 		exit(1)
+
+	#return to workdir
+	os.chdir('..')
 	
 if __name__ == "__main__":
 	try_count = 0
