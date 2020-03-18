@@ -6,10 +6,22 @@ import psutil
 import logging
 import traceback
 from render_service_scripts.unpack import unpack_all
+import shutil
 
 # logging
 logging.basicConfig(filename="python_log.txt", level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def build_viewer_pack(version, filename):
+		try:
+			zip_name = "RPRViewerPack_{}_{}".format(version, filename)	
+			shutil.make_archive(zip_name, 'zip', 'scene')
+		except Exception as ex:
+			logger.error("Zip package build failed.")
+			logger.error(str(ex))
+			logger.error(traceback.format_exc())	
+			exit(1)
 
 
 def main():
@@ -22,9 +34,6 @@ def main():
 	parser.add_argument('--engine')
 	parser.add_argument('--iterations')
 	args = parser.parse_args()
-
-	# unpack all archives
-	unpack_all(os.getcwd(), delete=True)
 
 	# find GLTF scene and UIConfig
 	gltf_file = ""
@@ -80,8 +89,7 @@ def main():
 		json.dump(config, f, indent=' ', sort_keys=True)
 		
 	# parse scene name
-	split_name = args.scene_name.split('.')
-	filename = '.'.join(split_name[0:-1])
+	filename = args.scene_name
 
 	# pack zip
 	repeat_launch = False
@@ -90,16 +98,7 @@ def main():
 			repeat_launch = True
 
 	if not repeat_launch:
-		try:
-			zip_name = "RPRViewerPack_{}_{}.zip".format(args.version, filename)	
-			st = psutil.Popen('7z a "{}" ./"{}"/*'.format(zip_name, "."), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-			st.communicate()
-			logger.info("Zip package was built successfuly.")
-		except Exception as ex:
-			logger.error("Zip package build failed.")
-			logger.error(str(ex))
-			logger.error(traceback.format_exc())	
-			exit(1)
+		build_viewer_pack(args.version, filename)
 
 	config['save_frames'] = "yes"
 	config['iterations_per_frame'] = int(args.iterations)
@@ -144,6 +143,8 @@ def main():
 	
 if __name__ == "__main__":
 	try_count = 0
+	# unpack all archives
+	unpack_all(os.getcwd(), delete=True)
 	while try_count < 3:
 		try:
 			main()
