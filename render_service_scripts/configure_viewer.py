@@ -89,7 +89,7 @@ def main():
 		json.dump(config, f, indent=' ', sort_keys=True)
 		
 	# parse scene name
-	filename = args.scene_name
+	filename = args.scene_name.rsplit('.', 1)[0]
 
 	# pack zip
 	repeat_launch = False
