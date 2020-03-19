@@ -5,7 +5,7 @@ import os
 import logging
 
 # logging
-logging.basicConfig(filename="python_log.txt", level=logging.INFO)
+logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
