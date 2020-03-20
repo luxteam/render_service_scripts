@@ -1,7 +1,8 @@
 import argparse
 import glob
 import json
-
+import subprocess
+import psutil
 import requests
 import os
 
@@ -163,3 +164,7 @@ class Util:
 		self.logger.info("Sending results")
 		post_data = {'status': status, 'fail_reason': fail_reason, 'id': args.id, 'build_number': args.build_number}
 		return rc, post_data
+
+	@staticmethod
+	def start_render(render_bat_file):
+		return psutil.Popen(render_bat_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

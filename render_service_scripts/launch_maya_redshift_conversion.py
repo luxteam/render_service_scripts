@@ -114,7 +114,7 @@ def main():
 	util.send_status(post_data)
 
 	# start render
-	p = psutil.Popen(render_bat_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	p = util.start_render(render_bat_file)
 
 	# catch timeout ~30 minutes
 	rc = 0
@@ -167,7 +167,7 @@ def main():
 	util.send_status(post_data)
 
 	# start render
-	p = psutil.Popen(render_bat_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	p = util.start_render(render_bat_file)
 
 	# catch timeout ~30 minutes
 	rc = 0

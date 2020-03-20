@@ -72,7 +72,7 @@ def main():
 	logger.info("Starting rendering scene: {}".format(blender_scene))
 
 	# start render
-	p = psutil.Popen(render_bat_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	p = util.start_render(render_bat_file)
 
 	# start error logs daemon
 	queue = Queue()
