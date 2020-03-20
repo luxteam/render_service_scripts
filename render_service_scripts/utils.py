@@ -1,4 +1,5 @@
 import argparse
+import ctypes
 import glob
 import json
 import subprocess
@@ -137,7 +138,7 @@ class Util:
 	def get_images(output_dir, image_ext):
 		return glob.glob(os.path.join(output_dir, '*{}'.format(image_ext)))
 
-	def create_result_status_post_data(self, rc, output_dir):
+	def 	create_result_status_post_data(self, rc, output_dir):
 		images = Util.get_images(output_dir, '.jpg')
 		args = self.args
 		status = "Unknown"
@@ -168,3 +169,25 @@ class Util:
 	@staticmethod
 	def start_render(render_bat_file):
 		return psutil.Popen(render_bat_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+	@staticmethod
+	def get_windows_titles():
+		EnumWindows = ctypes.windll.user32.EnumWindows
+		EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
+		GetWindowText = ctypes.windll.user32.GetWindowTextW
+		GetWindowTextLength = ctypes.windll.user32.GetWindowTextLengthW
+		IsWindowVisible = ctypes.windll.user32.IsWindowVisible
+
+		titles = []
+
+		def foreach_window(hwnd, lParam):
+			if IsWindowVisible(hwnd):
+				length = GetWindowTextLength(hwnd)
+				buff = ctypes.create_unicode_buffer(length + 1)
+				GetWindowText(hwnd, buff, length + 1)
+				titles.append(buff.value)
+			return True
+
+		EnumWindows(EnumWindowsProc(foreach_window), 0)
+
+		return titles

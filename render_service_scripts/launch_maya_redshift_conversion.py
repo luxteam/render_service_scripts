@@ -35,28 +35,6 @@ def get_rs_render_time(log_name):
 				return float(x.second + x.minute * 60 + float(x.microsecond / 1000000))
 
 
-def get_windows_titles():
-	EnumWindows = ctypes.windll.user32.EnumWindows
-	EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
-	GetWindowText = ctypes.windll.user32.GetWindowTextW
-	GetWindowTextLength = ctypes.windll.user32.GetWindowTextLengthW
-	IsWindowVisible = ctypes.windll.user32.IsWindowVisible
-
-	titles = []
-
-	def foreach_window(hwnd, lParam):
-		if IsWindowVisible(hwnd):
-			length = GetWindowTextLength(hwnd)
-			buff = ctypes.create_unicode_buffer(length + 1)
-			GetWindowText(hwnd, buff, length + 1)
-			titles.append(buff.value)
-		return True
-
-	EnumWindows(EnumWindowsProc(foreach_window), 0)
-
-	return titles
-
-
 def main():
 	args = Util.get_required_args('--django_ip', '--id', '--build_number', '--tool', '--scene_name')
 
@@ -179,7 +157,7 @@ def main():
 		except (subprocess.TimeoutExpired, psutil.TimeoutExpired) as err:
 			total_timeout -= 1
 			fatal_errors_titles = ['maya', 'Student Version File', 'Radeon ProRender Error', 'Script Editor', 'File contains mental ray nodes']
-			error_window = set(fatal_errors_titles).intersection(get_windows_titles())
+			error_window = set(fatal_errors_titles).intersection(util.get_windows_titles())
 			if error_window:
 				rc = -1
 				for child in reversed(p.children(recursive=True)):
@@ -210,7 +188,7 @@ def main():
 	files = util.create_files_dict(OUTPUT_DIR)
 
 	# send result data
-	post_data = util.create_result_status_post_data(rc, OUTPUT_DIR)
+	rc, post_data = util.create_result_status_post_data(rc, OUTPUT_DIR)
 	util.send_status(post_data, files)
 
 	return rc

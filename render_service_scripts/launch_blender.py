@@ -131,7 +131,7 @@ def main():
 
 	# send result data
 	files = util.create_files_dict(OUTPUT_DIR)
-	post_data = util.create_result_status_post_data(rc, OUTPUT_DIR)
+	rc, post_data = util.create_result_status_post_data(rc, OUTPUT_DIR)
 	util.send_status(post_data, files)
 
 	return rc
