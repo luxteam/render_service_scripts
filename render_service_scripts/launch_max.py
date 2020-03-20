@@ -73,8 +73,7 @@ def main():
 	current_path_for_max = os.getcwd().replace("\\", "\\\\")
 
 	# read maya template
-	with open("max_render.ms") as f:
-		max_script_template = f.read()
+	max_script_template = util.read_file("max_render.ms")
 	
 	max_script = max_script_template.format(min_samples=args.min_samples, max_samples=args.max_samples, noise_threshold=args.noise_threshold, \
 		width = args.width, height = args.height, res_path=current_path_for_max, startFrame=args.startFrame, endFrame=args.endFrame, scene_path=max_scene)
@@ -137,9 +136,7 @@ def main():
 	# send render info
 	logger.info("Sending render info")
 	if os.path.exists("render_info.json"):
-		with open("render_info.json") as f:
-			data = json.loads(f.read())
-
+		data = json.loads(util.read_file("render_info.json"))
 		post_data = {'render_time': data['render_time'], 'width': data['width'], 'height': data['height'], 'min_samples': data['min_samples'], \
 			'max_samples': data['max_samples'], 'noise_threshold': data['noise_threshold'], 'id': args.id, 'status':'render_info'}
 		util.send_status(post_data)

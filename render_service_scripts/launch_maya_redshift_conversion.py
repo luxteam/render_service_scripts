@@ -94,8 +94,7 @@ def main():
 		project = current_path_for_maya
 
 	# read maya template
-	with open("conversion_redshift_render.py") as f:
-		redshift_script_template = f.read()
+	redshift_script_template = util.read_file("conversion_redshift_render.py")
 
 	redshift_script = redshift_script_template.format(res_path=current_path_for_maya, scene_path=maya_scene, project=project)
 
@@ -151,11 +150,9 @@ def main():
 		util.send_status(post_data)
 	except:
 		logger.info("Error. No render time!")
-			
-	
-	# read maya template
-	with open("conversion_rpr_render.py") as f:
-		rpr_script_template = f.read()
+
+	# read RPR template
+	rpr_script_template = util.read_file("conversion_rpr_render.py")
 	
 	rpr_script = rpr_script_template.format(res_path=current_path_for_maya, scene_path=maya_scene, project=project)
 
@@ -214,9 +211,7 @@ def main():
 	# send render info
 	logger.info("Sending rpr render info")
 	if os.path.exists("rpr_render_info.json"):
-		with open("rpr_render_info.json") as f:
-			data = json.loads(f.read())
-
+		data = json.loads(util.read_file("rpr_render_info.json"))
 		post_data = {'rpr_render_time': data['rpr_render_time'], 'id': args.id, 'status':'rpr_render_info'}
 		util.send_status(post_data)
 	else:

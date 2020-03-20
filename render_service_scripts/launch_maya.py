@@ -113,12 +113,8 @@ def main():
 		project = current_path_for_maya
 
 	# read maya template
-	if args.batchRender == "true":
-		with open("maya_batch_render.py") as f:
-			maya_script_template = f.read()
-	else:
-		with open("maya_render.py") as f:
-			maya_script_template = f.read()
+	maya_script_template = util.read_file("maya_batch_render.py") if args.batchRender == "true" else util.read_file(
+		"maya_render.py")
 	
 	maya_script = maya_script_template.format(min_samples=args.min_samples, max_samples=args.max_samples, noise_threshold=args.noise_threshold, \
 		width = args.width, height = args.height, res_path=current_path_for_maya, startFrame=args.startFrame, endFrame=args.endFrame, scene_path=maya_scene, project=project)
@@ -226,9 +222,7 @@ def main():
 	# send render info
 	logger.info("Sending render info")
 	if os.path.exists("render_info.json"):
-		with open("render_info.json") as f:
-			data = json.loads(f.read())
-
+		data = json.loads(util.read_file("render_info.json"))
 		post_data = {'render_time': data['render_time'], 'width': data['width'], 'height': data['height'], 'min_samples': data['min_samples'], \
 			'max_samples': data['max_samples'], 'noise_threshold': data['noise_threshold'], 'id': args.id, 'status':'render_info'}
 		util.send_status(post_data)

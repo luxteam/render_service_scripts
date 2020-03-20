@@ -54,8 +54,7 @@ def main():
 	logger.info("Found scene: {}".format(blender_scene))
 
 	# read blender template
-	with open ("blender_render.py") as f:
-		blender_script_template = f.read()
+	blender_script_template = util.read_file("blender_render.py")
 
 	# format template for current scene
 	blender_script = blender_script_template.format(min_samples=args.min_samples, max_samples=args.max_samples, noise_threshold=args.noise_threshold, \
@@ -146,7 +145,7 @@ def main():
 	logger.info("Sending render info")
 	if os.path.exists("render_info.json"):
 		with open("render_info.json") as f:
-			data = json.loads(f.read())
+			data = json.loads(util.read_file("render_info.json"))
 
 		post_data = {'render_time': data['render_time'], 'width': data['width'], 'height': data['height'], 'min_samples': data['min_samples'], \
 			'max_samples': data['max_samples'], 'noise_threshold': data['noise_threshold'], 'id': args.id, 'status':'render_info'}
