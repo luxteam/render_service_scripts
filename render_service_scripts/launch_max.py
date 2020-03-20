@@ -9,6 +9,8 @@ import requests
 import glob
 import logging
 from render_service_scripts.unpack import unpack_scene
+from render_service_scripts import utils
+
 
 # logging
 logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')
@@ -23,44 +25,6 @@ def find_max_scene():
 				scene.append(os.path.join(rootdir, file))
 	scene[0] = scene[0].replace("\\", "\\\\")
 	return scene[0]
-
-
-def send_status(post_data, django_ip):	
-	try_count = 0
-	while try_count < 3:
-		try:
-			response = requests.post(django_ip, data=post_data)
-			if response.status_code  == 200:
-				logger.info("POST request successfuly sent.")
-				break
-			else:
-				logger.info("POST reques failed, status code: " + str(response.status_code))
-				break
-		except Exception as e:
-			if try_count == 2:
-				logger.info("POST request try 3 failed. Finishing work.")
-				break
-			try_count += 1
-			logger.info("POST request failed. Retry ...")
-
-
-def send_results(post_data, files, django_ip):
-	try_count = 0
-	while try_count < 3:
-		try:
-			response = requests.post(django_ip, data=post_data, files=files)
-			if response.status_code  == 200:
-				logger.info("POST request successfuly sent.")
-				break
-			else:
-				logger.info("POST reques failed, status code: " + str(response.status_code))
-				break
-		except Exception as e:
-			if try_count == 2:
-				logger.info("POST request try 3 failed. Finishing work.")
-				break
-			try_count += 1
-			logger.info("POST request failed. Retry ...")
 
 
 def get_windows_titles():
@@ -102,6 +66,9 @@ def main():
 	parser.add_argument('--scene_name', required=True)
 	args = parser.parse_args()
 
+	# create utils object
+	util = utils.Util(ip=args.django_ip, logger=logger)
+
 	# create output folder for images and logs
 	if not os.path.exists('Output'):
 		os.makedirs('Output')
@@ -140,7 +107,7 @@ def main():
 	# starting rendering
 	logger.info("Starting rendering scene: {}".format(max_scene))
 	post_data = {'status': 'Rendering', 'id': args.id}
-	send_status(post_data, args.django_ip)
+	util.send_status(post_data)
 
 	# start render
 	p = psutil.Popen(render_bat_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -174,7 +141,7 @@ def main():
 	# update render status
 	logger.info("Finished rendering scene: {}".format(max_scene))
 	post_data = {'status': 'Completed', 'id': args.id}
-	send_status(post_data, args.django_ip)
+	util.send_status(post_data)
 
 	# send render info
 	logger.info("Sending render info")
@@ -184,7 +151,7 @@ def main():
 
 		post_data = {'render_time': data['render_time'], 'width': data['width'], 'height': data['height'], 'min_samples': data['min_samples'], \
 			'max_samples': data['max_samples'], 'noise_threshold': data['noise_threshold'], 'id': args.id, 'status':'render_info'}
-		send_status(post_data, args.django_ip)
+		util.send_status(post_data)
 	else:
 		logger.info("Error. No render info!")
 
@@ -225,7 +192,7 @@ def main():
 
 	logger.info("Sending results")
 	post_data = {'status': status, 'fail_reason': fail_reason, 'id': args.id, 'build_number': args.build_number}
-	send_results(post_data, files, args.django_ip)
+	util.send_status(post_data, files)
 
 	return rc
 
