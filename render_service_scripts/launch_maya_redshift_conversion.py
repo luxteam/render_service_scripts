@@ -10,6 +10,7 @@ import os
 import logging
 import ctypes
 from render_service_scripts.unpack import unpack_scene
+from render_service_scripts import utils
 
 
 # logging
@@ -41,44 +42,6 @@ def find_maya_scene():
 
 	scene[0] = scene[0].replace("\\", "/")
 	return scene[0]
-
-
-def send_status(post_data, django_ip):	
-	try_count = 0
-	while try_count < 3:
-		try:
-			response = requests.post(django_ip, data=post_data)
-			if response.status_code  == 200:
-				logger.info("POST request successfuly sent.")
-				break
-			else:
-				logger.info("POST reques failed, status code: " + str(response.status_code))
-				break
-		except Exception as e:
-			if try_count == 2:
-				logger.info("POST request try 3 failed. Finishing work.")
-				break
-			try_count += 1
-			logger.info("POST request failed. Retry ...")
-
-
-def send_results(post_data, files, django_ip):
-	try_count = 0
-	while try_count < 3:
-		try:
-			response = requests.post(django_ip, data=post_data, files=files)
-			if response.status_code  == 200:
-				logger.info("POST request successfuly sent.")
-				break
-			else:
-				logger.info("POST reques failed, status code: " + str(response.status_code))
-				break
-		except Exception as e:
-			if try_count == 2:
-				logger.info("POST request try 3 failed. Finishing work.")
-				break
-			try_count += 1
-			logger.info("POST request failed. Retry ...")
 
 
 def get_rs_render_time(log_name):
@@ -127,6 +90,9 @@ def main():
 	parser.add_argument('--tool', required=True)
 	parser.add_argument('--scene_name', required=True)
 	args = parser.parse_args()
+
+	# create utils object
+	util = utils.Util(ip=args.django_ip, logger=logger)
 
 	# create output folder for images and logs
 	if not os.path.exists('Output'):
@@ -180,7 +146,7 @@ def main():
 	# starting rendering
 	logger.info("Starting rendering redshift scene: {}".format(maya_scene))
 	post_data = {'status': 'Rendering redshift', 'id': args.id}
-	send_status(post_data, args.django_ip)	
+	util.send_status(post_data)
 
 	# start render
 	p = psutil.Popen(render_bat_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -199,7 +165,7 @@ def main():
 	logger.info("Finished rendering redshift scene: {}".format(maya_scene))
 	logger.info("Starting converting redshift scene: {}".format(maya_scene))
 	post_data = {'status': 'Converting redshift', 'id': args.id}
-	send_status(post_data, args.django_ip)
+	util.send_status(post_data)
 
 	# send render info
 	logger.info("Sending render info")
@@ -207,7 +173,7 @@ def main():
 	try:
 		redshift_render_time = round(get_rs_render_time(os.path.join("Output", "batch_redshift_render_log.txt")), 2)
 		post_data = {'redshift_render_time': redshift_render_time, 'id': args.id, 'status':'redshift_render_info'}
-		send_status(post_data, args.django_ip)
+		util.send_status(post_data)
 	except:
 		logger.info("Error. No render time!")
 			
@@ -237,7 +203,7 @@ def main():
 	# starting rendering
 	logger.info("Starting rendering rpr scene: {}".format(maya_scene))
 	post_data = {'status': 'Rendering RPR', 'id': args.id}
-	send_status(post_data, args.django_ip)
+	util.send_status(post_data)
 
 	# start render
 	p = psutil.Popen(render_bat_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -268,7 +234,7 @@ def main():
 	# update render status
 	logger.info("Finished rendering rpr scene: {}".format(maya_scene))
 	post_data = {'status': 'Completed', 'id': args.id}
-	send_status(post_data, args.django_ip)
+	util.send_status(post_data)
 
 	# send render info
 	logger.info("Sending rpr render info")
@@ -277,7 +243,7 @@ def main():
 			data = json.loads(f.read())
 
 		post_data = {'rpr_render_time': data['rpr_render_time'], 'id': args.id, 'status':'rpr_render_info'}
-		send_status(post_data, args.django_ip)
+		util.send_status(post_data)
 	else:
 		logger.info("Error. No render info!")
 		
@@ -320,7 +286,7 @@ def main():
 
 	logger.info("Sending results")
 	post_data = {'status': status, 'fail_reason': fail_reason, 'id': args.id, 'build_number': args.build_number}
-	send_results(post_data, files, args.django_ip)
+	util.send_status(post_data, files)
 
 	return rc
 
