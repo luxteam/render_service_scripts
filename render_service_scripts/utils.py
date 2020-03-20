@@ -1,3 +1,5 @@
+import argparse
+
 import requests
 import os
 
@@ -25,6 +27,19 @@ class Util:
 					break
 				try_count += 1
 				self.logger.info("POST request failed. Retry ...")
+
+	@staticmethod
+	def get_required_args(*arg_names):
+		parser = argparse.ArgumentParser()
+		for arg in arg_names:
+			parser.add_argument(arg, required=True)
+		return parser.parse_args()
+
+	@staticmethod
+	def get_render_args(*args):
+		return Util.get_required_args('--django_ip', '--id', '--build_number', '--tool', '--min_samples',
+									  '--max_samples', '--noise_threshold', '--startFrame', '--endFrame', '--width',
+									  '--height', '--scene_name', *args)
 
 	@staticmethod
 	def create_dir(path):
