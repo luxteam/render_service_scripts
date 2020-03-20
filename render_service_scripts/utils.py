@@ -32,6 +32,11 @@ class Util:
 			os.makedirs(path)
 
 	@staticmethod
+	def read_file(file_path):
+		with open(file_path) as f:
+			return f.read()
+
+	@staticmethod
 	def update_license(file):
 		with open(file) as f:
 			scene_file = f.read()
