@@ -1,5 +1,6 @@
 import argparse
 import ctypes
+import datetime
 import glob
 import json
 import subprocess
@@ -191,3 +192,18 @@ class Util:
 		EnumWindows(EnumWindowsProc(foreach_window), 0)
 
 		return titles
+
+	@staticmethod
+	def get_tool_render_time(log_name, tool_name):
+		with open(log_name, 'r') as file:
+			for line in file.readlines():
+				if "[{}] Rendering done - total time for 1 frames:".format(tool_name) in line:
+					time_s = line.split(": ")[-1]
+
+					try:
+						x = datetime.datetime.strptime(time_s.replace('\n', '').replace('\r', ''), '%S.%fs')
+					except ValueError:
+						x = datetime.datetime.strptime(time_s.replace('\n', '').replace('\r', ''), '%Mm:%Ss')
+					# 	TODO: proceed H:M:S
+
+					return float(x.second + x.minute * 60 + float(x.microsecond / 1000000))

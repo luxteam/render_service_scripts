@@ -19,21 +19,6 @@ logger = logging.getLogger(__name__)
 OUTPUT_DIR = 'Output'
 
 
-def get_ai_render_time(log_name):
-	with open(log_name, 'r') as file:
-		for line in file.readlines():
-			if "[Arnold] Rendering done - total time for 1 frames:" in line:
-				time_s = line.split(": ")[-1]
-
-				try:
-					x = datetime.datetime.strptime(time_s.replace('\n', '').replace('\r', ''), '%S.%fs')
-				except ValueError:
-					x = datetime.datetime.strptime(time_s.replace('\n', '').replace('\r', ''), '%Mm:%Ss')
-				# 	TODO: proceed H:M:S
-
-				return float(x.second + x.minute * 60 + float(x.microsecond / 1000000))
-
-
 def main():
 	args = Util.get_render_args()
 
@@ -113,7 +98,7 @@ def main():
 	# send render info
 	render_time = 0
 	try:
-		render_time = round(get_ai_render_time(os.path.join("Output", "maya_render_log.txt")), 2)
+		render_time = round(util.get_tool_render_time(os.path.join(OUTPUT_DIR, "maya_render_log.txt"), 'Arnold'), 2)
 	except:
 		logger.info("Error. No render time!")
 	util.send_render_info('render_info.json', render_time=render_time)
