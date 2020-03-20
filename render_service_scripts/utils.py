@@ -1,5 +1,6 @@
 import argparse
 import glob
+import json
 
 import requests
 import os
@@ -30,6 +31,26 @@ class Util:
 				try_count += 1
 				self.logger.info("POST request failed. Retry ...")
 
+	def create_info_post_data(self, data):
+		return {'render_time': data['render_time'],
+				'width': data['width'],
+				'height': data['height'],
+				'min_samples': data['min_samples'],
+				'max_samples': data['max_samples'],
+				'noise_threshold': data['noise_threshold'],
+				'id': self.args.id,
+				'status': 'render_info'}
+
+	def send_render_info(self, info_json_file, **kwargs):
+		self.logger.info("Sending render info")
+		if os.path.exists(info_json_file):
+			data = json.loads(self.read_file(info_json_file))
+			data.update(kwargs)
+			post_data = self.create_info_post_data(data)
+			self.send_status(post_data)
+		else:
+			self.logger.info("Error. No render info!")
+
 	@staticmethod
 	def get_required_args(*arg_names):
 		parser = argparse.ArgumentParser()
@@ -40,8 +61,8 @@ class Util:
 	@staticmethod
 	def get_render_args(*args):
 		return Util.get_required_args('--django_ip', '--id', '--build_number', '--tool', '--min_samples',
-										'--max_samples', '--noise_threshold', '--startFrame', '--endFrame', '--width',
-										'--height', '--scene_name', *args)
+									  '--max_samples', '--noise_threshold', '--startFrame', '--endFrame', '--width',
+									  '--height', '--scene_name', *args)
 
 	@staticmethod
 	def create_dir(path):
@@ -94,14 +115,14 @@ class Util:
 		if 'project' in kwargs:
 			template = template.format(project=kwargs['project'])
 		return template.format(min_samples=args.min_samples,
-								max_samples=args.max_samples,
-								noise_threshold=args.noise_threshold,
-								width=args.width,
-								height=args.height,
-								startFrame=args.startFrame,
-								endFrame=args.endFrame,
-								res_path=res_path,
-								scene_path=scene_path)
+							   max_samples=args.max_samples,
+							   noise_threshold=args.noise_threshold,
+							   width=args.width,
+							   height=args.height,
+							   startFrame=args.startFrame,
+							   endFrame=args.endFrame,
+							   res_path=res_path,
+							   scene_path=scene_path)
 
 	def create_files_dict(self, output_dir):
 		files = {}

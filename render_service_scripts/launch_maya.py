@@ -204,19 +204,10 @@ def main():
 			json.dump(data, file)
 
 	# send render info
-	logger.info("Sending render info")
-	if os.path.exists("render_info.json"):
-		data = json.loads(util.read_file("render_info.json"))
-		post_data = {'render_time': data['render_time'], 'width': data['width'], 'height': data['height'], 'min_samples': data['min_samples'], \
-			'max_samples': data['max_samples'], 'noise_threshold': data['noise_threshold'], 'id': args.id, 'status':'render_info'}
-		util.send_status(post_data)
-	else:
-		logger.info("Error. No render info!")
-
-	# preparing dict with output files for post
-	files = util.create_files_dict(OUTPUT_DIR)
+	util.send_render_info('render_info.json')
 
 	# send result data
+	files = util.create_files_dict(OUTPUT_DIR)
 	post_data = util.create_result_status_post_data(rc, OUTPUT_DIR)
 	util.send_status(post_data, files)
 
