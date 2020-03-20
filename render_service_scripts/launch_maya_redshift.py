@@ -16,6 +16,7 @@ from render_service_scripts import utils
 logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')
 logger = logging.getLogger(__name__)
 
+OUTPUT_DIR = 'Output'
 
 def update_license(file):
 	with open(file) as f:
@@ -79,8 +80,7 @@ def main():
 	util = utils.Util(ip=args.django_ip, logger=logger)
 
 	# create output folder for images and logs
-	if not os.path.exists('Output'):
-		os.makedirs('Output')
+	util.create_dir(OUTPUT_DIR)
 
 	# unpack all archives
 	unpack_scene(args.scene_name)

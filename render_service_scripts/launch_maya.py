@@ -20,6 +20,8 @@ from render_service_scripts import utils
 logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')
 logger = logging.getLogger(__name__)
 
+OUTPUT_DIR = 'Output'
+
 
 def update_license(file):
 	with open(file) as f:
@@ -74,7 +76,7 @@ def start_monitor_render_thread(args, util):
 	util.send_status(post_data)
 	thread = threading.currentThread()
 	delay = 10
-	log_file = os.path.join('Output', "batch_render_log.txt")
+	log_file = os.path.join(OUTPUT_DIR, "batch_render_log.txt")
 	all_frames = int(args.endFrame) - int(args.startFrame) + 1
 	while getattr(thread, "run", True):
 		try :
@@ -115,8 +117,7 @@ def main():
 	util = utils.Util(ip=args.django_ip, logger=logger)
 
 	# create output folder for images and logs
-	if not os.path.exists('Output'):
-		os.makedirs('Output')
+	util.create_dir(OUTPUT_DIR)
 
 	# unpack all archives
 	unpack_scene(args.scene_name)
@@ -262,16 +263,16 @@ def main():
 
 	# preparing dict with output files for post
 	files = {}
-	output_files = os.listdir('Output')
+	output_files = os.listdir(OUTPUT_DIR)
 	for output_file in output_files:
-		files.update({output_file: open(os.path.join('Output', output_file), 'rb')})
+		files.update({output_file: open(os.path.join(OUTPUT_DIR, output_file), 'rb')})
 	logger.info("Output files: {}".format(files))
 
 	# detect render status
 	status = "Unknown"
 	fail_reason = "Unknown"
 
-	images = glob.glob(os.path.join('Output' ,'*.jpg'))
+	images = glob.glob(os.path.join(OUTPUT_DIR ,'*.jpg'))
 	if rc == 0 and images:
 		logger.info("Render status: success")
 		status = "Success"

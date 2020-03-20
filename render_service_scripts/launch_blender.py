@@ -17,6 +17,8 @@ from render_service_scripts import utils
 logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')
 logger = logging.getLogger(__name__)
 
+OUTPUT_DIR = 'Output'
+
 
 def find_blender_scene():
 	scene = []
@@ -53,8 +55,7 @@ def main():
 
 	util = utils.Util(ip=args.django_ip, logger=logger)
 	# create output folder for images and logs
-	if not os.path.exists('Output'):
-		os.makedirs('Output')
+	util.create_dir(OUTPUT_DIR)
 
 	# unpack all archives
 	unpack_scene(args.scene_name)
@@ -110,7 +111,7 @@ def main():
 	timeout = 2000
 	start_time = datetime.datetime.now()
 	rendered = 0
-	with open(os.path.join('Output', "render_log.txt"), 'w', encoding='utf-8') as file:
+	with open(os.path.join(OUTPUT_DIR, "render_log.txt"), 'w', encoding='utf-8') as file:
 		while (datetime.datetime.now() - start_time).total_seconds() <= timeout:
 			output = p.stdout.readline()
 			if output:
@@ -137,7 +138,7 @@ def main():
 			p.terminate()
 
 	# save logs stderr
-	with open(os.path.join('Output', "render_log.txt"), 'a', encoding='utf-8') as file:
+	with open(os.path.join(OUTPUT_DIR, "render_log.txt"), 'a', encoding='utf-8') as file:
 		file.write("\n ----STEDERR---- \n")
 		while True:
 			try:
@@ -165,16 +166,16 @@ def main():
 
 	# preparing dict with output files for post
 	files = {}
-	output_files = os.listdir('Output')
+	output_files = os.listdir(OUTPUT_DIR)
 	for output_file in output_files:
-		files.update({output_file: open(os.path.join('Output', output_file), 'rb')})
+		files.update({output_file: open(os.path.join(OUTPUT_DIR, output_file), 'rb')})
 	logger.info("Output files: {}".format(files))
 
 	# detect render status
 	status = "Unknown"
 	fail_reason = "Unknown"
 
-	images = glob.glob(os.path.join('Output' ,'*.jpg'))
+	images = glob.glob(os.path.join(OUTPUT_DIR ,'*.jpg'))
 	if rc == 0 and images:
 		logger.info("Render status: success")
 		status = "Success"

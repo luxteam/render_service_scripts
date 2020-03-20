@@ -26,6 +26,6 @@ class Util:
                 try_count += 1
                 self.logger.info("POST request failed. Retry ...")
 
-        def create_dir(path):
-            if not os.path.exists(path):
-                os.makedirs(path)
+    def create_dir(self, path):
+        if not os.path.exists(path):
+            os.makedirs(path)
