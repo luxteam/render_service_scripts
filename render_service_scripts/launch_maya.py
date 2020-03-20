@@ -182,7 +182,7 @@ def main():
 
 	# start render monitoring thread
 	if args.batchRender == "true":
-		monitoring_thread = threading.Thread(target=start_monitor_render_thread, args=(args, ))
+		monitoring_thread = threading.Thread(target=start_monitor_render_thread, args=(args, util, ))
 		monitoring_thread.start()
 
 	# start render
