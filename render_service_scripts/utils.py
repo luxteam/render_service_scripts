@@ -53,6 +53,13 @@ class Util:
 			return f.read()
 
 	@staticmethod
+	def save_render_file(script, file_name, ext):
+		render_file = "render_{}.{}".format(file_name, ext)
+		with open(render_file, 'w') as f:
+			f.write(script)
+		return render_file
+
+	@staticmethod
 	def update_license(file):
 		with open(file) as f:
 			scene_file = f.read()

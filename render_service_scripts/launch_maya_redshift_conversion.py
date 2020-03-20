@@ -95,9 +95,7 @@ def main():
 	filename = os.path.basename(maya_scene).split(".")[0]
 
 	# save render py file
-	redshift_render_file = "render_redshift_{}.py".format(filename) 
-	with open(redshift_render_file, 'w') as f:
-		f.write(redshift_script)
+	redshift_render_file = util.save_render_file(redshift_script, 'redshift_{}'.format(filename), 'py')
 
 	# Redshift batch render
 	cmd_command = '''
@@ -150,9 +148,7 @@ def main():
 	rpr_script = rpr_script_template.format(res_path=current_path_for_maya, scene_path=maya_scene, project=project)
 
 	# save render py file
-	render_rpr_file = "render_rpr_{}.py".format(filename) 
-	with open(render_rpr_file, 'w') as f:
-		f.write(rpr_script)
+	render_rpr_file = util.save_render_file(rpr_script, 'rpr_{}'.format(filename), 'py')
 
 	# save bat file
 	cmd_command = '''

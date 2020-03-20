@@ -52,9 +52,7 @@ def main():
 	filename = '.'.join(split_name[0:-1])
 
 	# save render py file
-	render_file = "render_{}.py".format(filename)
-	with open(render_file, 'w') as f:
-		f.write(blender_script)
+	render_file = util.save_render_file(blender_script, filename, 'py')
 
 	# save bat file
 	blender_path = "C:\\Program Files\\Blender Foundation\\Blender {tool}\\blender.exe".format(tool=args.tool)

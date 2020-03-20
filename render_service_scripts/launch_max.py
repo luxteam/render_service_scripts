@@ -67,9 +67,7 @@ def main():
 	filename = os.path.basename(max_scene).split(".")[0]
 
 	# save render py file
-	render_file = "render_{}.ms".format(filename) 
-	with open(render_file, 'w') as f:
-		f.write(max_script)
+	render_file = util.save_render_file(max_script, filename, 'ms')
 
 	# save bat file
 	cmd_command = '''

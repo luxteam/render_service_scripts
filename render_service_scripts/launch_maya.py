@@ -109,9 +109,7 @@ def main():
 	filename = os.path.basename(maya_scene).split(".")[0]
 
 	# save render py file
-	render_file = "render_{}.py".format(filename) 
-	with open(render_file, 'w') as f:
-		f.write(maya_script)
+	render_file = util.save_render_file(maya_script, filename, 'py')
 
 	# save bat file
 	if args.batchRender == "true":
