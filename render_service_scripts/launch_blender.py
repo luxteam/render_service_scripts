@@ -11,7 +11,7 @@ import datetime
 from threading import Thread
 from queue import Queue, Empty
 from render_service_scripts.unpack import unpack_scene
-from render_service_scripts import utils
+from render_service_scripts.utils import Util
 
 # logging
 logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')
@@ -27,23 +27,9 @@ def start_error_logs_daemon(stderr, queue):
 
 
 def main():
+	args = Util.get_render_args()
 
-	parser = argparse.ArgumentParser()
-	parser.add_argument('--django_ip', required=True)
-	parser.add_argument('--id', required=True)
-	parser.add_argument('--build_number', required=True)
-	parser.add_argument('--tool', required=True)
-	parser.add_argument('--min_samples', required=True)
-	parser.add_argument('--max_samples', required=True)
-	parser.add_argument('--noise_threshold', required=True)
-	parser.add_argument('--startFrame', required=True)
-	parser.add_argument('--endFrame', required=True)
-	parser.add_argument('--width', required=True)
-	parser.add_argument('--height', required=True)
-	parser.add_argument('--scene_name', required=True)
-	args = parser.parse_args()
-
-	util = utils.Util(ip=args.django_ip, logger=logger)
+	util = Util(ip=args.django_ip, logger=logger)
 	# create output folder for images and logs
 	util.create_dir(OUTPUT_DIR)
 

@@ -10,7 +10,7 @@ import os
 import logging
 import ctypes
 from render_service_scripts.unpack import unpack_scene
-from render_service_scripts import utils
+from render_service_scripts.utils import Util
 
 
 # logging
@@ -58,17 +58,10 @@ def get_windows_titles():
 
 
 def main():
-
-	parser = argparse.ArgumentParser()
-	parser.add_argument('--django_ip', required=True)
-	parser.add_argument('--id', required=True)
-	parser.add_argument('--build_number', required=True)
-	parser.add_argument('--tool', required=True)
-	parser.add_argument('--scene_name', required=True)
-	args = parser.parse_args()
+	args = Util.get_required_args('--django_ip', '--id', '--build_number', '--tool', '--scene_name')
 
 	# create utils object
-	util = utils.Util(ip=args.django_ip, logger=logger)
+	util = Util(ip=args.django_ip, logger=logger)
 
 	# create output folder for images and logs
 	util.create_dir(OUTPUT_DIR)

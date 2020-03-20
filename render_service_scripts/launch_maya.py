@@ -13,7 +13,7 @@ from time import sleep
 from file_read_backwards import FileReadBackwards
 from render_service_scripts.unpack import unpack_scene
 from pathlib import Path
-from render_service_scripts import utils
+from render_service_scripts.utils import Util
 
 
 # logging
@@ -70,25 +70,10 @@ def start_monitor_render_thread(args, util):
 
 
 def main():
-
-	parser = argparse.ArgumentParser()
-	parser.add_argument('--django_ip', required=True)
-	parser.add_argument('--id', required=True)
-	parser.add_argument('--build_number', required=True)
-	parser.add_argument('--tool', required=True)
-	parser.add_argument('--min_samples', required=True)
-	parser.add_argument('--max_samples', required=True)
-	parser.add_argument('--noise_threshold', required=True)
-	parser.add_argument('--startFrame', required=True)
-	parser.add_argument('--endFrame', required=True)
-	parser.add_argument('--width', required=True)
-	parser.add_argument('--height', required=True)
-	parser.add_argument('--scene_name', required=True)
-	parser.add_argument('--batchRender', required=True)
-	args = parser.parse_args()
+	args = Util.get_render_args()
 
 	# create utils object
-	util = utils.Util(ip=args.django_ip, logger=logger)
+	util = Util(ip=args.django_ip, logger=logger)
 
 	# create output folder for images and logs
 	util.create_dir(OUTPUT_DIR)
