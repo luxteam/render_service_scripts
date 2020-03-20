@@ -1,4 +1,5 @@
 import requests
+import os
 
 
 class Util:
@@ -24,3 +25,7 @@ class Util:
                     break
                 try_count += 1
                 self.logger.info("POST request failed. Retry ...")
+
+        def create_dir(path):
+            if not os.path.exists(path):
+                os.makedirs(path)
