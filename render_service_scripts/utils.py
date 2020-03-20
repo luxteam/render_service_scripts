@@ -1,4 +1,5 @@
 import argparse
+import glob
 
 import requests
 import os
@@ -101,3 +102,35 @@ class Util:
 								endFrame=args.endFrame,
 								res_path=res_path,
 								scene_path=scene_path)
+
+	@staticmethod
+	def get_images(output_dir, image_ext):
+		return glob.glob(os.path.join(output_dir, '*{}'.format(image_ext)))
+
+	def create_result_status_post_data(self, rc, output_dir):
+		images = Util.get_images(output_dir, '.jpg')
+		args = self.args
+		status = "Unknown"
+		fail_reason = "Unknown"
+
+		if rc == 0 and images:
+			self.logger.info("Render status: success")
+			status = "Success"
+		else:
+			self.logger.info("Render status: failure")
+			status = "Failure"
+			if rc == -1:
+				self.logger.info("Fail reason: timeout expired")
+				fail_reason = "Timeout expired"
+			elif not images:
+				rc = -1
+				self.logger.info("Fail reason: rendering failed, no output image")
+				fail_reason = "No output image"
+			else:
+				rc = -1
+				self.logger.info("Fail reason: unknown")
+				fail_reason = "Unknown"
+
+		self.logger.info("Sending results")
+		post_data = {'status': status, 'fail_reason': fail_reason, 'id': args.id, 'build_number': args.build_number}
+		return rc, post_data

@@ -145,31 +145,8 @@ def main():
 		files.update({output_file: open(os.path.join(OUTPUT_DIR, output_file), 'rb')})
 	logger.info("Output files: {}".format(files))
 
-	# detect render status
-	status = "Unknown"
-	fail_reason = "Unknown"
-
-	images = glob.glob(os.path.join(OUTPUT_DIR ,'*.jpg'))
-	if rc == 0 and images:
-		logger.info("Render status: success")
-		status = "Success"
-	else:
-		logger.info("Render status: failure")
-		status = "Failure"
-		if rc == -1:
-			logger.info("Fail reason: timeout expired")
-			fail_reason = "Timeout expired"
-		elif not images:
-			rc = -1
-			logger.info("Fail reason: rendering failed, no output image")
-			fail_reason = "No output image"
-		else:
-			rc = -1
-			logger.info("Fail reason: unknown")
-			fail_reason = "Unknown"
-
-	logger.info("Sending results")
-	post_data = {'status': status, 'fail_reason': fail_reason, 'id': args.id, 'build_number': args.build_number}
+	# send result data
+	post_data = util.create_result_status_post_data(rc, OUTPUT_DIR)
 	util.send_status(post_data, files)
 
 	return rc
