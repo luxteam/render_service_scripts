@@ -193,18 +193,12 @@ def main():
 	post_data = {'status': 'Completed', 'id': args.id}
 	util.send_status(post_data)
 
-	if args.batchRender == "true":
-		# add render time to render info
-		with open(os.path.join(".", "render_info.json"), "r") as file:
-			data = json.load(file)
-
-		data["render_time"] = round(render_time, 2)
-
-		with open(os.path.join(".", "render_info.json"), "w") as file:
-			json.dump(data, file)
-
 	# send render info
-	util.send_render_info('render_info.json')
+	if args.batchRender == "true":
+		util.send_render_info('render_info.json', render_time=round(render_time, 2))
+	else:
+		util.send_render_info('render_info.json')
+
 
 	# send result data
 	files = util.create_files_dict(OUTPUT_DIR)
