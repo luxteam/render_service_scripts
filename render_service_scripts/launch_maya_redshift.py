@@ -65,12 +65,10 @@ def main():
 
 	# read maya template
 	maya_script_template = util.read_file("redshift_render.py")
-
-	maya_script = maya_script_template.format(min_samples=args.min_samples, max_samples=args.max_samples,
-											  noise_threshold=args.noise_threshold, \
-											  width=args.width, height=args.height, res_path=current_path_for_maya,
-											  startFrame=args.startFrame, endFrame=args.endFrame, scene_path=maya_scene,
-											  project=project)
+	maya_script = util.format_template_with_args(maya_script_template,
+												 res_path=current_path_for_maya,
+												 scene_path=maya_scene,
+												 project=project)
 
 	# scene name
 	filename = os.path.basename(maya_scene).split(".")[0]

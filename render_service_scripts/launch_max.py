@@ -58,12 +58,11 @@ def main():
 
 	current_path_for_max = os.getcwd().replace("\\", "\\\\")
 
-	# read maya template
+	# read max template
 	max_script_template = util.read_file("max_render.ms")
-	
-	max_script = max_script_template.format(min_samples=args.min_samples, max_samples=args.max_samples, noise_threshold=args.noise_threshold, \
-		width = args.width, height = args.height, res_path=current_path_for_max, startFrame=args.startFrame, endFrame=args.endFrame, scene_path=max_scene)
-
+	max_script = util.format_template_with_args(max_script_template,
+												 res_path=current_path_for_max,
+												 scene_path=max_scene)
 	# scene name
 	filename = os.path.basename(max_scene).split(".")[0]
 

@@ -43,8 +43,9 @@ def main():
 	blender_script_template = util.read_file("blender_render.py")
 
 	# format template for current scene
-	blender_script = blender_script_template.format(min_samples=args.min_samples, max_samples=args.max_samples, noise_threshold=args.noise_threshold, \
-		width = args.width, height = args.height, res_path=os.getcwd(), startFrame=args.startFrame, endFrame=args.endFrame, scene_path=blender_scene)
+	blender_script = util.format_template_with_args(blender_script_template,
+													res_path=os.getcwd(),
+													scene_path=blender_scene)
 
 	# scene name
 	split_name = os.path.basename(blender_scene).split(".")
