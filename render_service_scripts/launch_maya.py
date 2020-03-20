@@ -13,6 +13,8 @@ from time import sleep
 from file_read_backwards import FileReadBackwards
 from render_service_scripts.unpack import unpack_scene
 from pathlib import Path
+from render_service_scripts import utils
+
 
 # logging
 logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')
@@ -45,44 +47,6 @@ def find_maya_scene():
 	return scene[0]
 
 
-def send_status(post_data, django_ip):	
-	try_count = 0
-	while try_count < 3:
-		try:
-			response = requests.post(django_ip, data=post_data)
-			if response.status_code  == 200:
-				logger.info("POST request successfuly sent.")
-				break
-			else:
-				logger.info("POST reques failed, status code: " + str(response.status_code))
-				break
-		except Exception as e:
-			if try_count == 2:
-				logger.info("POST request try 3 failed. Finishing work.")
-				break
-			try_count += 1
-			logger.info("POST request failed. Retry ...")
-
-
-def send_results(post_data, files, django_ip):
-	try_count = 0
-	while try_count < 3:
-		try:
-			response = requests.post(django_ip, data=post_data, files=files)
-			if response.status_code  == 200:
-				logger.info("POST request successfuly sent.")
-				break
-			else:
-				logger.info("POST reques failed, status code: " + str(response.status_code))
-				break
-		except Exception as e:
-			if try_count == 2:
-				logger.info("POST request try 3 failed. Finishing work.")
-				break
-			try_count += 1
-			logger.info("POST request failed. Retry ...")
-
-
 def get_windows_titles():
 	EnumWindows = ctypes.windll.user32.EnumWindows
 	EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
@@ -105,9 +69,9 @@ def get_windows_titles():
 	return titles
 
 
-def start_monitor_render_thread(args):
+def start_monitor_render_thread(args, util):
 	post_data = {'status': 'Rendering', 'id': args.id}
-	send_status(post_data, args.django_ip)
+	util.send_status(post_data)
 	thread = threading.currentThread()
 	delay = 10
 	log_file = os.path.join('Output', "batch_render_log.txt")
@@ -122,7 +86,7 @@ def start_monitor_render_thread(args):
 						rendered = ((frame_number - int(args.startFrame)) * 100 + current_percentage) / (all_frames * 100) * 100
 						status = 'Rendering ( ' + str(round(rendered, 2)) + '% )'
 						post_data = {'status': status, 'id': args.id}
-						send_status(post_data, args.django_ip)
+						util.send_status(post_data)
 						break
 		except FileNotFoundError:
 			pass
@@ -146,6 +110,9 @@ def main():
 	parser.add_argument('--scene_name', required=True)
 	parser.add_argument('--batchRender', required=True)
 	args = parser.parse_args()
+
+	# create utils object
+	util = utils.Util(ip=args.django_ip, logger=logger)
 
 	# create output folder for images and logs
 	if not os.path.exists('Output'):
@@ -211,7 +178,7 @@ def main():
 	# starting rendering
 	logger.info("Starting rendering scene: {}".format(maya_scene))
 	post_data = {'status': 'Rendering', 'id': args.id}
-	send_status(post_data, args.django_ip)
+	util.send_status(post_data)
 
 	# start render monitoring thread
 	if args.batchRender == "true":
@@ -269,7 +236,7 @@ def main():
 	# update render status
 	logger.info("Finished rendering scene: {}".format(maya_scene))
 	post_data = {'status': 'Completed', 'id': args.id}
-	send_status(post_data, args.django_ip)
+	util.send_status(post_data)
 
 	if args.batchRender == "true":
 		# add render time to render info
@@ -289,7 +256,7 @@ def main():
 
 		post_data = {'render_time': data['render_time'], 'width': data['width'], 'height': data['height'], 'min_samples': data['min_samples'], \
 			'max_samples': data['max_samples'], 'noise_threshold': data['noise_threshold'], 'id': args.id, 'status':'render_info'}
-		send_status(post_data, args.django_ip)
+		util.send_status(post_data)
 	else:
 		logger.info("Error. No render info!")
 
@@ -330,7 +297,7 @@ def main():
 
 	logger.info("Sending results")
 	post_data = {'status': status, 'fail_reason': fail_reason, 'id': args.id, 'build_number': args.build_number}
-	send_results(post_data, files, args.django_ip)
+	util.send_status(post_data, files)
 
 	return rc
 
