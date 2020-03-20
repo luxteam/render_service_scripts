@@ -11,6 +11,7 @@ import datetime
 from threading import Thread
 from queue import Queue, Empty
 from render_service_scripts.unpack import unpack_scene
+from render_service_scripts import utils
 
 # logging
 logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')
@@ -25,44 +26,6 @@ def find_blender_scene():
 				scene.append(os.path.join(rootdir, file))
 
 	return scene[0]
-
-
-def send_status(post_data, django_ip):	
-	try_count = 0
-	while try_count < 3:
-		try:
-			response = requests.post(django_ip, data=post_data)
-			if response.status_code  == 200:
-				logger.info("POST request successfuly sent.")
-				break
-			else:
-				logger.info("POST reques failed, status code: " + str(response.status_code))
-				break
-		except Exception as e:
-			if try_count == 2:
-				logger.info("POST request try 3 failed. Finishing work.")
-				break
-			try_count += 1
-			logger.info("POST request failed. Retry ...")
-
-
-def send_results(post_data, files, django_ip):
-	try_count = 0
-	while try_count < 3:
-		try:
-			response = requests.post(django_ip, data=post_data, files=files)
-			if response.status_code  == 200:
-				logger.info("POST request successfuly sent.")
-				break
-			else:
-				logger.info("POST reques failed, status code: " + str(response.status_code))
-				break
-		except Exception as e:
-			if try_count == 2:
-				logger.info("POST request try 3 failed. Finishing work.")
-				break
-			try_count += 1
-			logger.info("POST request failed. Retry ...")
 
 
 def start_error_logs_daemon(stderr, queue):
@@ -88,6 +51,7 @@ def main():
 	parser.add_argument('--scene_name', required=True)
 	args = parser.parse_args()
 
+	util = utils.Util(ip=args.django_ip, logger=logger)
 	# create output folder for images and logs
 	if not os.path.exists('Output'):
 		os.makedirs('Output')
@@ -111,7 +75,7 @@ def main():
 	filename = '.'.join(split_name[0:-1])
 
 	# save render py file
-	render_file = "render_{}.py".format(filename) 
+	render_file = "render_{}.py".format(filename)
 	with open(render_file, 'w') as f:
 		f.write(blender_script)
 
@@ -125,7 +89,7 @@ def main():
 	# starting rendering
 	logger.info("Starting rendering scene: {}".format(blender_scene))
 	post_data = {'status': 'Rendering', 'id': args.id}
-	send_status(post_data, args.django_ip)
+	util.send_status(post_data)
 
 	last_send_status = datetime.datetime.now()
 
@@ -140,7 +104,7 @@ def main():
 	thread = Thread(target=start_error_logs_daemon, args=(p.stderr, queue))
 	thread.daemon = True
 	thread.start()
-	
+
 	# catch timeout ~30 minutes
 	rc = 0
 	timeout = 2000
@@ -164,13 +128,13 @@ def main():
 				break
 			if rendered != 0 and (datetime.datetime.now() - last_send_status).total_seconds() >= 10:
 				post_data = {'status': 'Rendering ( ' + str(round(rendered, 2)) + '% )', 'id': args.id}
-				send_status(post_data, args.django_ip)
+				util.send_status(post_data)
 				last_send_status = datetime.datetime.now()
 		else:
 			rc = -1
 			for child in reversed(p.children(recursive=True)):
 				child.terminate()
-			p.terminate()		
+			p.terminate()
 
 	# save logs stderr
 	with open(os.path.join('Output', "render_log.txt"), 'a', encoding='utf-8') as file:
@@ -185,7 +149,7 @@ def main():
 	# update render status
 	logger.info("Finished rendering scene: {}".format(blender_scene))
 	post_data = {'status': 'Completed', 'id': args.id}
-	send_status(post_data, args.django_ip)
+	util.send_status(post_data)
 
 	# send render info
 	logger.info("Sending render info")
@@ -195,7 +159,7 @@ def main():
 
 		post_data = {'render_time': data['render_time'], 'width': data['width'], 'height': data['height'], 'min_samples': data['min_samples'], \
 			'max_samples': data['max_samples'], 'noise_threshold': data['noise_threshold'], 'id': args.id, 'status':'render_info'}
-		send_status(post_data, args.django_ip)
+		util.send_status(post_data)
 	else:
 		logger.info("Error. No render info!")
 
@@ -231,7 +195,7 @@ def main():
 
 	logger.info("Sending results")
 	post_data = {'status': status, 'fail_reason': fail_reason, 'id': args.id, 'build_number': args.build_number}
-	send_results(post_data, files, args.django_ip)
+	util.send_status(post_data, files)
 
 	return rc
 
