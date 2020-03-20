@@ -70,10 +70,10 @@ def start_monitor_render_thread(args, util):
 
 
 def main():
-	args = Util.get_render_args()
+	args = Util.get_render_args('--batchRender')
 
 	# create utils object
-	util = Util(ip=args.django_ip, logger=logger)
+	util = Util(ip=args.django_ip, logger=logger, args=args)
 
 	# create output folder for images and logs
 	util.create_dir(OUTPUT_DIR)

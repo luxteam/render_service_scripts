@@ -45,7 +45,7 @@ def main():
 	args = Util.get_render_args()
 
 	# create utils object
-	util = Util(ip=args.django_ip, logger=logger)
+	util = Util(ip=args.django_ip, logger=logger, args=args)
 
 	# create output folder for images and logs
 	util.create_dir(OUTPUT_DIR)

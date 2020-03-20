@@ -61,7 +61,7 @@ def main():
 	args = Util.get_required_args('--django_ip', '--id', '--build_number', '--tool', '--scene_name')
 
 	# create utils object
-	util = Util(ip=args.django_ip, logger=logger)
+	util = Util(ip=args.django_ip, logger=logger, args=args)
 
 	# create output folder for images and logs
 	util.create_dir(OUTPUT_DIR)

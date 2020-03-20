@@ -5,9 +5,10 @@ import os
 
 
 class Util:
-	def __init__(self, ip, logger):
+	def __init__(self, ip, logger, args):
 		self.ip = ip
 		self.logger = logger
+		self.args = args
 
 	def send_status(self, post_data, files=None):
 		try_count = 0
@@ -16,10 +17,10 @@ class Util:
 				response = requests.post(self.ip, data=post_data, files=files) if files \
 					else requests.post(self.ip, data=post_data)
 				if response.status_code == 200:
-					self.logger.info("POST request successfuly sent.")
+					self.logger.info("POST request successfully sent.")
 					break
 				else:
-					self.logger.info("POST reques failed, status code: " + str(response.status_code))
+					self.logger.info("POST request failed, status code: " + str(response.status_code))
 					break
 			except Exception as e:
 				if try_count == 2:
@@ -38,8 +39,8 @@ class Util:
 	@staticmethod
 	def get_render_args(*args):
 		return Util.get_required_args('--django_ip', '--id', '--build_number', '--tool', '--min_samples',
-									  '--max_samples', '--noise_threshold', '--startFrame', '--endFrame', '--width',
-									  '--height', '--scene_name', *args)
+										'--max_samples', '--noise_threshold', '--startFrame', '--endFrame', '--width',
+										'--height', '--scene_name', *args)
 
 	@staticmethod
 	def create_dir(path):
@@ -79,3 +80,17 @@ class Util:
 		if slash_replacer:
 			scene[0] = scene[0].replace("\\", slash_replacer)
 		return scene[0]
+
+	def format_template_with_args(self, template, res_path, scene_path, **kwargs):
+		args = self.args
+		if 'project' in kwargs:
+			template = template.format(project=kwargs['project'])
+		return template.format(min_samples=args.min_samples,
+								max_samples=args.max_samples,
+								noise_threshold=args.noise_threshold,
+								width=args.width,
+								height=args.height,
+								startFrame=args.startFrame,
+								endFrame=args.endFrame,
+								res_path=res_path,
+								scene_path=scene_path)

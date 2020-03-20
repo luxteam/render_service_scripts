@@ -29,7 +29,7 @@ def start_error_logs_daemon(stderr, queue):
 def main():
 	args = Util.get_render_args()
 
-	util = Util(ip=args.django_ip, logger=logger)
+	util = Util(ip=args.django_ip, logger=logger, args=args)
 	# create output folder for images and logs
 	util.create_dir(OUTPUT_DIR)
 
