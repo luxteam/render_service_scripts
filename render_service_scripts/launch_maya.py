@@ -214,11 +214,7 @@ def main():
 		logger.info("Error. No render info!")
 
 	# preparing dict with output files for post
-	files = {}
-	output_files = os.listdir(OUTPUT_DIR)
-	for output_file in output_files:
-		files.update({output_file: open(os.path.join(OUTPUT_DIR, output_file), 'rb')})
-	logger.info("Output files: {}".format(files))
+	files = util.create_files_dict(OUTPUT_DIR)
 
 	# send result data
 	post_data = util.create_result_status_post_data(rc, OUTPUT_DIR)

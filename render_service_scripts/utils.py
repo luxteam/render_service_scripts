@@ -103,6 +103,14 @@ class Util:
 								res_path=res_path,
 								scene_path=scene_path)
 
+	def create_files_dict(self, output_dir):
+		files = {}
+		output_files = os.listdir(output_dir)
+		for output_file in output_files:
+			files.update({output_file: open(os.path.join(output_dir, output_file), 'rb')})
+		self.logger.info("Output files: {}".format(files))
+		return files
+
 	@staticmethod
 	def get_images(output_dir, image_ext):
 		return glob.glob(os.path.join(output_dir, '*{}'.format(image_ext)))
