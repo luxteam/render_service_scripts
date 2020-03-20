@@ -20,16 +20,6 @@ logger = logging.getLogger(__name__)
 OUTPUT_DIR = 'Output'
 
 
-def find_blender_scene():
-	scene = []
-	for rootdir, dirs, files in os.walk(os.getcwd()):
-		for file in files:
-			if file.endswith('.blend'):
-				scene.append(os.path.join(rootdir, file))
-
-	return scene[0]
-
-
 def start_error_logs_daemon(stderr, queue):
 	for line in iter(stderr.readline, b''):
 		queue.put(line)
@@ -60,7 +50,7 @@ def main():
 	# unpack all archives
 	unpack_scene(args.scene_name)
 	# find all blender scenes
-	blender_scene = find_blender_scene()
+	blender_scene = util.find_scene()
 	logger.info("Found scene: {}".format(blender_scene))
 
 	# read blender template

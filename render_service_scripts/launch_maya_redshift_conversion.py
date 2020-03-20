@@ -19,31 +19,6 @@ logger = logging.getLogger(__name__)
 
 OUTPUT_DIR = 'Output'
 
-def update_license(file):
-	with open(file) as f:
-		scene_file = f.read()
-
-	license = "fileInfo \"license\" \"student\";"
-	scene_file = scene_file.replace(license, '')
-
-	with open(file, "w") as f:
-		f.write(scene_file)
-
-
-def find_maya_scene():
-	scene = []
-	for rootdir, dirs, files in os.walk(os.getcwd()):
-		for file in files:
-			if file.endswith('.ma') or file.endswith('mb'):
-				try:
-					update_license(os.path.join(rootdir, file))
-				except Exception:
-					pass
-				scene.append(os.path.join(rootdir, file))
-
-	scene[0] = scene[0].replace("\\", "/")
-	return scene[0]
-
 
 def get_rs_render_time(log_name):
 	with open(log_name, 'r') as file:
@@ -101,8 +76,8 @@ def main():
 	# unpack all archives
 	unpack_scene(args.scene_name)
 	
-	# find all blender scenes
-	maya_scene = find_maya_scene()
+	# find all maya scenes
+	maya_scene = util.find_scene('.ma', '.mb', slash_replacer="/", is_maya=True)
 	logger.info("Found scene: {}".format(maya_scene))
 
 	current_path_for_maya = os.getcwd().replace("\\", "/") + "/"

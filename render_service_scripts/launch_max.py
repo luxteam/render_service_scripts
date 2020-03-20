@@ -18,15 +18,6 @@ logger = logging.getLogger(__name__)
 
 OUTPUT_DIR = 'Output'
 
-def find_max_scene():
-	scene = []
-	for rootdir, dirs, files in os.walk(os.getcwd()):
-		for file in files:
-			if file.endswith('.max'):
-				scene.append(os.path.join(rootdir, file))
-	scene[0] = scene[0].replace("\\", "\\\\")
-	return scene[0]
-
 
 def get_windows_titles():
 	EnumWindows = ctypes.windll.user32.EnumWindows
@@ -76,7 +67,7 @@ def main():
 	# unpack all archives
 	unpack_scene(args.scene_name)
 	# find all blender scenes
-	max_scene = find_max_scene()
+	max_scene = util.find_scene('.max', slash_replacer='\\\\')
 	logger.info("Found scene: {}".format(max_scene))
 
 	current_path_for_max = os.getcwd().replace("\\", "\\\\")
