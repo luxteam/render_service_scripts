@@ -44,7 +44,6 @@ def main():
 	
 	# find all maya scenes
 	maya_scene = util.find_scene('.ma', '.mb', slash_replacer="/", is_maya=True)
-	logger.info("Found scene: {}".format(maya_scene))
 
 	current_path_for_maya = os.getcwd().replace("\\", "/") + "/"
 
@@ -61,11 +60,10 @@ def main():
 
 	# read maya template
 	redshift_script_template = util.read_file("conversion_redshift_render.py")
-
 	redshift_script = redshift_script_template.format(res_path=current_path_for_maya, scene_path=maya_scene, project=project)
 
 	# scene name
-	filename = os.path.basename(maya_scene).split(".")[0]
+	filename = util.get_file_name(maya_scene)
 
 	# save render py file
 	redshift_render_file = util.save_render_file(redshift_script, 'redshift_{}'.format(filename), 'py')
@@ -82,9 +80,7 @@ def main():
 		f.write(cmd_command)		
 
 	# starting rendering
-	logger.info("Starting rendering redshift scene: {}".format(maya_scene))
-	post_data = {'status': 'Rendering redshift', 'id': args.id}
-	util.send_status(post_data)
+	util.update_render_status('Rendering redshift', "Starting rendering redshift scene: {}".format(maya_scene))
 
 	# start render
 	p = util.start_render(render_bat_file)
@@ -100,16 +96,15 @@ def main():
 		p.terminate()
 
 	# update render status
-	logger.info("Finished rendering redshift scene: {}".format(maya_scene))
-	logger.info("Starting converting redshift scene: {}".format(maya_scene))
-	post_data = {'status': 'Converting redshift', 'id': args.id}
-	util.send_status(post_data)
+	util.update_render_status('Converting redshift',
+							  "Finished rendering redshift scene: {}".format(maya_scene),
+							  "Starting converting redshift scene: {}".format(maya_scene))
 
 	# send render info
 	logger.info("Sending render info")
 	redshift_render_time = 0
 	try:
-		redshift_render_time = round(get_rs_render_time(os.path.join("Output", "batch_redshift_render_log.txt")), 2)
+		redshift_render_time = round(get_rs_render_time(os.path.join(OUTPUT_DIR, "batch_redshift_render_log.txt")), 2)
 		post_data = {'redshift_render_time': redshift_render_time, 'id': args.id, 'status':'redshift_render_info'}
 		util.send_status(post_data)
 	except:
@@ -117,7 +112,6 @@ def main():
 
 	# read RPR template
 	rpr_script_template = util.read_file("conversion_rpr_render.py")
-	
 	rpr_script = rpr_script_template.format(res_path=current_path_for_maya, scene_path=maya_scene, project=project)
 
 	# save render py file
@@ -135,9 +129,7 @@ def main():
 		f.write(cmd_command)
 
 	# starting rendering
-	logger.info("Starting rendering rpr scene: {}".format(maya_scene))
-	post_data = {'status': 'Rendering RPR', 'id': args.id}
-	util.send_status(post_data)
+	util.update_render_status('Rendering RPR', "Starting rendering rpr scene: {}".format(maya_scene))
 
 	# start render
 	p = util.start_render(render_bat_file)
@@ -166,9 +158,7 @@ def main():
 			break
 
 	# update render status
-	logger.info("Finished rendering rpr scene: {}".format(maya_scene))
-	post_data = {'status': 'Completed', 'id': args.id}
-	util.send_status(post_data)
+	util.update_render_status('Completed', "Finished rendering rpr scene: {}".format(maya_scene))
 
 	# send render info
 	logger.info("Sending rpr render info")
