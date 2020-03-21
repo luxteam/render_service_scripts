@@ -1,19 +1,13 @@
-import argparse
 import subprocess
 import psutil
-import json
-import ctypes
-import requests
-import glob
 import os
 import logging
 import datetime
 import threading
 from time import sleep
 from file_read_backwards import FileReadBackwards
-from render_service_scripts.unpack import unpack_scene
 from pathlib import Path
-from render_service_scripts.utils import Util, MayaLauncher
+from render_service_scripts.utils import MayaLauncher
 
 
 # logging
