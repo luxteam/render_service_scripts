@@ -70,11 +70,11 @@ class Util:
 
 	@staticmethod
 	def get_file_name(path):
-		return os.path.basename(path).split(".", 2)[0]
+		return os.path.basename(path).rsplit(".", 1)[0]
 
 	@staticmethod
 	def get_file_type(path):
-		split_file_name = os.path.basename(path).split(".", 2)
+		split_file_name = os.path.basename(path).rsplit(".", 1)
 		return split_file_name[1] if len(split_file_name) > 1 else None
 
 	@staticmethod
@@ -287,8 +287,9 @@ class RenderLauncher:
 		self.render_file = self.util.save_render_file(self.script, self.scene_file_name,
 													  self.util.get_file_type(self.template_name))
 
-	def update_render_status(self, status, log_message):
-		self.logger.info(log_message)
+	def update_render_status(self, status, *log_messages):
+		for log_message in log_messages:
+			self.logger.info(log_message)
 		post_data = {'status': status, 'id': self.args.id}
 		self.util.send_status(post_data)
 
@@ -321,10 +322,11 @@ class MayaLauncher(RenderLauncher):
 
 
 class MayaToolLauncher(RenderLauncher):
-	def __init__(self, logger, output_dir, maya_tool_name):
+	def __init__(self, logger, output_dir, maya_tool_name, args=None):
 		# parse command line args
 		self.maya_tool_name = maya_tool_name
-		args = Util.get_render_args()
+		if not args:
+			args = Util.get_render_args()
 		RenderLauncher.__init__(self,
 								args=args,
 								template_name="{}_render.py".format(maya_tool_name.lower()),
