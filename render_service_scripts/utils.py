@@ -88,8 +88,8 @@ class Util:
 			return f.read()
 
 	@staticmethod
-	def save_render_file(script, file_name, ext):
-		render_file = "render_{}.{}".format(file_name, ext)
+	def save_render_file(script, file_name, ext, file_beginning='render'):
+		render_file = "{}_{}.{}".format(file_beginning, file_name, ext)
 		with open(render_file, 'w') as f:
 			f.write(script)
 		return render_file
@@ -237,7 +237,8 @@ class RenderLauncher:
 				 res_path,
 				 args,
 				 is_maya=False,
-				 slash_replacer_scene_find=None):
+				 slash_replacer_scene_find=None,
+				 render_file_beginning='render'):
 		self.template_name = template_name
 		self.output_dir = output_dir
 		self.logger = logger
@@ -251,6 +252,8 @@ class RenderLauncher:
 		self.render_file = ""
 		self.script = ""
 		self.util = None
+		self.render_file_beginning = render_file_beginning
+		self.project = None
 
 	def prepare_launch(self):
 		# create util object
@@ -277,6 +280,7 @@ class RenderLauncher:
 
 			if not zip_file:
 				project = self.res_path
+		self.project = project
 
 		script_template = self.util.read_file(self.template_name)
 		self.script = self.util.format_template_with_args(script_template,
@@ -285,7 +289,8 @@ class RenderLauncher:
 														  project=project)
 		self.scene_file_name = self.util.get_file_name(self.scene)
 		self.render_file = self.util.save_render_file(self.script, self.scene_file_name,
-													  self.util.get_file_type(self.template_name))
+													  self.util.get_file_type(self.template_name),
+													  file_beginning=self.render_file_beginning)
 
 	def update_render_status(self, status, *log_messages):
 		for log_message in log_messages:
@@ -322,7 +327,7 @@ class MayaLauncher(RenderLauncher):
 
 
 class MayaToolLauncher(RenderLauncher):
-	def __init__(self, logger, output_dir, maya_tool_name, args=None):
+	def __init__(self, logger, output_dir, maya_tool_name, args=None, render_file_beginning='render'):
 		# parse command line args
 		self.maya_tool_name = maya_tool_name
 		if not args:
@@ -335,7 +340,8 @@ class MayaToolLauncher(RenderLauncher):
 								scene_ext=['.ma', '.mb'],
 								res_path=os.getcwd().replace("\\", "/") + "/",
 								is_maya=True,
-								slash_replacer_scene_find='/')
+								slash_replacer_scene_find='/',
+								render_file_beginning=render_file_beginning)
 
 	def launch(self):
 		render_file = self.util.get_file_name(self.render_file)
