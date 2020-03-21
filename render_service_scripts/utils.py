@@ -228,6 +228,11 @@ class Util:
 
 					return float(x.second + x.minute * 60 + float(x.microsecond / 1000000))
 
+	def update_render_status(self, status, *log_messages):
+		for log_message in log_messages:
+			self.logger.info(log_message)
+		post_data = {'status': status, 'id': self.args.id}
+		self.send_status(post_data)
 
 class RenderLauncher:
 	def __init__(self, template_name,
@@ -292,17 +297,11 @@ class RenderLauncher:
 													  self.util.get_file_type(self.template_name),
 													  file_beginning=self.render_file_beginning)
 
-	def update_render_status(self, status, *log_messages):
-		for log_message in log_messages:
-			self.logger.info(log_message)
-		post_data = {'status': status, 'id': self.args.id}
-		self.util.send_status(post_data)
-
 	def send_start_rendering(self):
-		self.update_render_status('Rendering', "Starting rendering scene: {}".format(self.scene))
+		self.util.update_render_status('Rendering', "Starting rendering scene: {}".format(self.scene))
 
 	def send_finish_rendering(self, ):
-		self.update_render_status('Completed', "Finished rendering scene: {}".format(self.scene))
+		self.util.update_render_status('Completed', "Finished rendering scene: {}".format(self.scene))
 
 	def send_result_data(self, rc):
 		files = self.util.create_files_dict(self.output_dir)
