@@ -10,7 +10,7 @@ OUTPUT_DIR = 'Output'
 
 
 def main():
-	launcher = MayaToolLauncher(logger, OUTPUT_DIR, 'Arnold')
+	launcher = MayaToolLauncher(logger, OUTPUT_DIR, 'Redshift')
 	launcher.prepare_launch()
 	return launcher.launch()
 
