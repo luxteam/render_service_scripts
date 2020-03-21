@@ -342,11 +342,11 @@ class MayaToolLauncher(RenderLauncher):
 	def launch(self):
 		render_file = self.util.get_file_name(self.render_file)
 		cmd_command = '''
-				set MAYA_CMD_FILE_OUTPUT=%cd%/Output/maya_render_log.txt
+				set MAYA_CMD_FILE_OUTPUT=%cd%/{output_dir}/maya_render_log.txt
 				set MAYA_SCRIPT_PATH=%cd%;%MAYA_SCRIPT_PATH%
 				set PYTHONPATH=%cd%;%PYTHONPATH%
-				"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -r {maya_tool} -preRender "python(\\"import {render_file} as render\\"); python(\\"render.main()\\");" -log "Output\\batch_render_log.txt" -of jpg {maya_scene}
-				'''.format(tool=self.args.tool, maya_scene=self.scene, render_file=render_file, maya_tool=self.maya_tool_name.lower())
+				"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -r {maya_tool} -preRender "python(\\"import {render_file} as render\\"); python(\\"render.main()\\");" -log "{output_dir}\\batch_render_log.txt" -of jpg {maya_scene}
+				'''.format(tool=self.args.tool, maya_scene=self.scene, render_file=render_file, maya_tool=self.maya_tool_name.lower(), output_dir=self.output_dir)
 		render_bat_file = "launch_render_{}.bat".format(self.scene_file_name)
 		with open(render_bat_file, 'w') as f:
 			f.write(cmd_command)
@@ -375,3 +375,15 @@ class MayaToolLauncher(RenderLauncher):
 		rc = self.send_result_data(rc)
 
 		return rc
+
+
+class BlenderLauncher(RenderLauncher):
+	def __init__(self, logger, output_dir):
+		args = Util.get_render_args()
+		RenderLauncher.__init__(self,
+								args=args,
+								template_name="blender_render.py",
+								output_dir=output_dir,
+								logger=logger,
+								scene_ext=['.blend'],
+								res_path=os.getcwd())

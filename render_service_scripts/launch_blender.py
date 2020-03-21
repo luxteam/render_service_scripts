@@ -11,7 +11,7 @@ import datetime
 from threading import Thread
 from queue import Queue, Empty
 from render_service_scripts.unpack import unpack_scene
-from render_service_scripts.utils import Util
+from render_service_scripts.utils import BlenderLauncher
 
 # logging
 logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')
@@ -27,32 +27,12 @@ def start_error_logs_daemon(stderr, queue):
 
 
 def main():
-	args = Util.get_render_args()
-
-	util = Util(ip=args.django_ip, logger=logger, args=args)
-	# create output folder for images and logs
-	util.create_dir(OUTPUT_DIR)
-
-	# unpack all archives
-	unpack_scene(args.scene_name)
-	# find all blender scenes
-	blender_scene = util.find_scene()
-	logger.info("Found scene: {}".format(blender_scene))
-
-	# read blender template
-	blender_script_template = util.read_file("blender_render.py")
-
-	# format template for current scene
-	blender_script = util.format_template_with_args(blender_script_template,
-													res_path=os.getcwd(),
-													scene_path=blender_scene)
-
-	# scene name
-	split_name = os.path.basename(blender_scene).split(".")
-	filename = '.'.join(split_name[0:-1])
-
-	# save render py file
-	render_file = util.save_render_file(blender_script, filename, 'py')
+	launcher = BlenderLauncher(logger, OUTPUT_DIR)
+	launcher.prepare_launch()
+	args = launcher.args
+	util = launcher.util
+	filename = launcher.scene_file_name
+	render_file = launcher.render_file
 
 	# save bat file
 	blender_path = "C:\\Program Files\\Blender Foundation\\Blender {tool}\\blender.exe".format(tool=args.tool)
@@ -61,15 +41,9 @@ def main():
 	with open(render_bat_file, 'w') as f:
 		f.write(cmd_command)
 
-	# starting rendering
-	logger.info("Starting rendering scene: {}".format(blender_scene))
-	post_data = {'status': 'Rendering', 'id': args.id}
-	util.send_status(post_data)
+	launcher.send_start_rendering()
 
 	last_send_status = datetime.datetime.now()
-
-	# starting rendering
-	logger.info("Starting rendering scene: {}".format(blender_scene))
 
 	# start render
 	p = util.start_render(render_bat_file)
@@ -121,20 +95,11 @@ def main():
 			except Empty:
 				break
 
-	# update render status
-	logger.info("Finished rendering scene: {}".format(blender_scene))
-	post_data = {'status': 'Completed', 'id': args.id}
-	util.send_status(post_data)
-
-	# send render info
-	util.send_render_info('render_info.json')
-
-	# send result data
-	files = util.create_files_dict(OUTPUT_DIR)
-	rc, post_data = util.create_result_status_post_data(rc, OUTPUT_DIR)
-	util.send_status(post_data, files)
+	launcher.send_finish_rendering()
+	rc = launcher.send_result_data(rc)
 
 	return rc
+
 
 if __name__ == "__main__":
 	rc = main()
