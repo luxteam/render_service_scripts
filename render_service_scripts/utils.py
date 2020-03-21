@@ -346,7 +346,7 @@ class MayaToolLauncher(RenderLauncher):
 				set MAYA_SCRIPT_PATH=%cd%;%MAYA_SCRIPT_PATH%
 				set PYTHONPATH=%cd%;%PYTHONPATH%
 				"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -r {maya_tool} -preRender "python(\\"import {render_file} as render\\"); python(\\"render.main()\\");" -log "Output\\batch_render_log.txt" -of jpg {maya_scene}
-				'''.format(tool=self.args.tool, maya_scene=self.scene, render_file=render_file, maya_tool=self.maya_tool_name)
+				'''.format(tool=self.args.tool, maya_scene=self.scene, render_file=render_file, maya_tool=self.maya_tool_name.lower())
 		render_bat_file = "launch_render_{}.bat".format(self.scene_file_name)
 		with open(render_bat_file, 'w') as f:
 			f.write(cmd_command)
