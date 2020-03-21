@@ -236,7 +236,6 @@ class RenderLauncher:
 				 # tool_path,
 				 # cmd_command,
 				 scene_ext,
-				 render_script_ext,
 				 res_path,
 				 args,
 				 is_maya=False,
@@ -307,6 +306,7 @@ class RenderLauncher:
 		files = self.util.create_files_dict(self.output_dir)
 		rc, post_data = self.util.create_result_status_post_data(rc, self.output_dir)
 		self.util.send_status(post_data, files)
+		return rc
 
 
 class MayaLauncher(RenderLauncher):
@@ -322,3 +322,56 @@ class MayaLauncher(RenderLauncher):
 								res_path=os.getcwd().replace("\\", "/") + "/",
 								is_maya=True,
 								slash_replacer_scene_find='/')
+
+
+class MayaToolLauncher(RenderLauncher):
+	def __init__(self, logger, output_dir, maya_tool_name):
+		# parse command line args
+		self.maya_tool_name = maya_tool_name
+		args = Util.get_render_args()
+		RenderLauncher.__init__(self,
+								args=args,
+								template_name="{}_render.py".format(maya_tool_name.lower()),
+								output_dir=output_dir,
+								logger=logger,
+								scene_ext=['.ma', '.mb'],
+								res_path=os.getcwd().replace("\\", "/") + "/",
+								is_maya=True,
+								slash_replacer_scene_find='/')
+
+	def launch(self):
+		render_file = self.util.get_file_name(self.render_file)
+		cmd_command = '''
+				set MAYA_CMD_FILE_OUTPUT=%cd%/Output/maya_render_log.txt
+				set MAYA_SCRIPT_PATH=%cd%;%MAYA_SCRIPT_PATH%
+				set PYTHONPATH=%cd%;%PYTHONPATH%
+				"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -r {maya_tool} -preRender "python(\\"import {render_file} as render\\"); python(\\"render.main()\\");" -log "Output\\batch_render_log.txt" -of jpg {maya_scene}
+				'''.format(tool=self.args.tool, maya_scene=self.scene, render_file=render_file, maya_tool=self.maya_tool_name)
+		render_bat_file = "launch_render_{}.bat".format(self.scene_file_name)
+		with open(render_bat_file, 'w') as f:
+			f.write(cmd_command)
+		self.send_start_rendering()
+
+		p = self.util.start_render(render_bat_file)
+
+		# catch timeout ~30 minutes
+		rc = 0
+		try:
+			stdout, stderr = p.communicate(timeout=2000)
+		except (subprocess.TimeoutExpired, psutil.TimeoutExpired) as err:
+			rc = -1
+			for child in reversed(p.children(recursive=True)):
+				child.terminate()
+			p.terminate()
+
+		self.send_finish_rendering()
+		# send render info
+		render_time = 0
+		try:
+			render_time = round(self.util.get_tool_render_time(os.path.join(self.output_dir, "maya_render_log.txt"), self.maya_tool_name),2)
+		except:
+			self.logger.info("Error. No render time!")
+		self.util.send_render_info('render_info.json', render_time=render_time)
+		rc = self.send_result_data(rc)
+
+		return rc

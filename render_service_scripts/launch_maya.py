@@ -50,7 +50,7 @@ def start_monitor_render_thread(args, util):
 def main():
 	launcher = MayaLauncher(logger, OUTPUT_DIR)
 	launcher.prepare_launch()
-	args = Util.get_render_args('--batchRender')
+	args = launcher.args
 	util = launcher.util
 	maya_scene = launcher.scene
 	filename = launcher.scene_file_name
