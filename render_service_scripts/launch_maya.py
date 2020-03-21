@@ -13,7 +13,7 @@ from time import sleep
 from file_read_backwards import FileReadBackwards
 from render_service_scripts.unpack import unpack_scene
 from pathlib import Path
-from render_service_scripts.utils import Util
+from render_service_scripts.utils import Util, MayaLauncher
 
 
 # logging
@@ -21,9 +21,6 @@ logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO, format
 logger = logging.getLogger(__name__)
 
 OUTPUT_DIR = 'Output'
-
-
-
 
 
 def start_monitor_render_thread(args, util):
@@ -51,46 +48,13 @@ def start_monitor_render_thread(args, util):
 
 
 def main():
+	launcher = MayaLauncher(logger, OUTPUT_DIR)
+	launcher.prepare_launch()
 	args = Util.get_render_args('--batchRender')
-
-	# create utils object
-	util = Util(ip=args.django_ip, logger=logger, args=args)
-
-	# create output folder for images and logs
-	util.create_dir(OUTPUT_DIR)
-
-	# unpack all archives
-	unpack_scene(args.scene_name)
-	# find all maya scenes
-	maya_scene = util.find_scene('.ma', '.mb', slash_replacer="/", is_maya=True)
-	logger.info("Found scene: {}".format(maya_scene))
-	
-	current_path_for_maya = os.getcwd().replace("\\", "/") + "/"
-
-	# detect project path
-	files = os.listdir(os.getcwd())
-	zip_file = False
-	for file in files:
-		if file.endswith(".zip") or file.endswith(".7z"):
-			zip_file = True
-			project = "/".join(maya_scene.split("/")[:-2])
-			
-	if not zip_file:
-		project = current_path_for_maya
-
-	# read maya template
-	maya_script_template = util.read_file("maya_batch_render.py") if args.batchRender == "true" \
-		else util.read_file("maya_render.py")
-	maya_script = util.format_template_with_args(maya_script_template,
-												 res_path=current_path_for_maya,
-												 scene_path=maya_scene,
-												 project=project)
-
-	# scene name
-	filename = os.path.basename(maya_scene).split(".")[0]
-
-	# save render py file
-	render_file = util.save_render_file(maya_script, filename, 'py')
+	util = launcher.util
+	maya_scene = launcher.scene
+	filename = launcher.scene_file_name
+	render_file = util.get_file_name(launcher.render_file)
 
 	# save bat file
 	if args.batchRender == "true":
@@ -99,22 +63,20 @@ def main():
 			set MAYA_SCRIPT_PATH=%cd%;%MAYA_SCRIPT_PATH%
 			set PYTHONPATH=%cd%;%PYTHONPATH%
 			"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -r FireRender -s {start_frame} -e {end_frame} -rgb true -preRender "python(\\"import {render_file} as render\\"); python(\\"render.main()\\");" -log "Output\\batch_render_log.txt" -of jpg {maya_scene} 
-			'''.format(tool=args.tool, render_file=render_file.split('.')[0], maya_scene=maya_scene, start_frame=args.startFrame, end_frame=args.endFrame)
+			'''.format(tool=args.tool, render_file=render_file, maya_scene=maya_scene, start_frame=args.startFrame, end_frame=args.endFrame)
 	else:
 		cmd_command = '''
 			set MAYA_CMD_FILE_OUTPUT=%cd%/Output/render_log.txt
 			set MAYA_SCRIPT_PATH=%cd%;%MAYA_SCRIPT_PATH%
 			set PYTHONPATH=%cd%;%PYTHONPATH%
 			"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Maya.exe" -command "python(\\"import {render_file} as render\\"); python(\\"render.main()\\");" 
-			'''.format(tool=args.tool, render_file=render_file.split('.')[0])
+			'''.format(tool=args.tool, render_file=render_file)
 	render_bat_file = "launch_render_{}.bat".format(filename)
 	with open(render_bat_file, 'w') as f:
 		f.write(cmd_command)
 
-	# starting rendering
-	logger.info("Starting rendering scene: {}".format(maya_scene))
-	post_data = {'status': 'Rendering', 'id': args.id}
-	util.send_status(post_data)
+	# send starting rendering
+	launcher.send_start_rendering()
 
 	# start render monitoring thread
 	if args.batchRender == "true":
@@ -136,7 +98,7 @@ def main():
 		except (subprocess.TimeoutExpired, psutil.TimeoutExpired) as err:
 			total_timeout -= 1
 			fatal_errors_titles = ['maya', 'Student Version File', 'Radeon ProRender Error', 'Script Editor', 'File contains mental ray nodes']
-			error_window = set(fatal_errors_titles).intersection(get_windows_titles())
+			error_window = set(fatal_errors_titles).intersection(util.get_windows_titles())
 			if error_window:
 				rc = -1
 				for child in reversed(p.children(recursive=True)):
@@ -170,9 +132,7 @@ def main():
 				os.rename(os.path.join(output_path, file), os.path.join(output_path, new_name))
 
 	# update render status
-	logger.info("Finished rendering scene: {}".format(maya_scene))
-	post_data = {'status': 'Completed', 'id': args.id}
-	util.send_status(post_data)
+	launcher.send_finish_rendering()
 
 	# send render info
 	if args.batchRender == "true":
@@ -180,11 +140,7 @@ def main():
 	else:
 		util.send_render_info('render_info.json')
 
-
-	# send result data
-	files = util.create_files_dict(OUTPUT_DIR)
-	rc, post_data = util.create_result_status_post_data(rc, OUTPUT_DIR)
-	util.send_status(post_data, files)
+	rc = launcher.send_result_data(rc)
 
 	return rc
 

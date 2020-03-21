@@ -7,6 +7,7 @@ import subprocess
 import psutil
 import requests
 import os
+from render_service_scripts.unpack import unpack_scene
 
 
 class Util:
@@ -68,6 +69,15 @@ class Util:
 									  '--height', '--scene_name', *args)
 
 	@staticmethod
+	def get_file_name(path):
+		return os.path.basename(path).split(".", 2)[0]
+
+	@staticmethod
+	def get_file_type(path):
+		split_file_name = os.path.basename(path).split(".", 2)
+		return split_file_name[1] if len(split_file_name) > 1 else None
+
+	@staticmethod
 	def create_dir(path):
 		if not os.path.exists(path):
 			os.makedirs(path)
@@ -95,8 +105,7 @@ class Util:
 		with open(file, "w") as f:
 			f.write(scene_file)
 
-	@staticmethod
-	def find_scene(*extensions, slash_replacer=None, is_maya=False):
+	def find_scene(self, *extensions, slash_replacer=None, is_maya=False):
 		scene = []
 		for root_dir, dirs, files in os.walk(os.getcwd()):
 			for file in files:
@@ -111,21 +120,32 @@ class Util:
 
 		if slash_replacer:
 			scene[0] = scene[0].replace("\\", slash_replacer)
+		self.logger.info("Found scene: {}".format(scene[0]))
 		return scene[0]
 
-	def format_template_with_args(self, template, res_path, scene_path, **kwargs):
+	def format_template_with_args(self, template, res_path, scene_path, project=None):
 		args = self.args
-		if 'project' in kwargs:
-			template = template.format(project=kwargs['project'])
-		return template.format(min_samples=args.min_samples,
-							   max_samples=args.max_samples,
-							   noise_threshold=args.noise_threshold,
-							   width=args.width,
-							   height=args.height,
-							   startFrame=args.startFrame,
-							   endFrame=args.endFrame,
-							   res_path=res_path,
-							   scene_path=scene_path)
+		if project:
+			return template.format(min_samples=args.min_samples,
+								   max_samples=args.max_samples,
+								   noise_threshold=args.noise_threshold,
+								   width=args.width,
+								   height=args.height,
+								   startFrame=args.startFrame,
+								   endFrame=args.endFrame,
+								   res_path=res_path,
+								   scene_path=scene_path,
+								   project=project)
+		else:
+			return template.format(min_samples=args.min_samples,
+								   max_samples=args.max_samples,
+								   noise_threshold=args.noise_threshold,
+								   width=args.width,
+								   height=args.height,
+								   startFrame=args.startFrame,
+								   endFrame=args.endFrame,
+								   res_path=res_path,
+								   scene_path=scene_path)
 
 	def create_files_dict(self, output_dir):
 		files = {}
@@ -139,7 +159,7 @@ class Util:
 	def get_images(output_dir, image_ext):
 		return glob.glob(os.path.join(output_dir, '*{}'.format(image_ext)))
 
-	def 	create_result_status_post_data(self, rc, output_dir):
+	def create_result_status_post_data(self, rc, output_dir):
 		images = Util.get_images(output_dir, '.jpg')
 		args = self.args
 		status = "Unknown"
@@ -207,3 +227,98 @@ class Util:
 					# 	TODO: proceed H:M:S
 
 					return float(x.second + x.minute * 60 + float(x.microsecond / 1000000))
+
+
+class RenderLauncher:
+	def __init__(self, template_name,
+				 output_dir,
+				 logger,
+				 # tool_path,
+				 # cmd_command,
+				 scene_ext,
+				 render_script_ext,
+				 res_path,
+				 args,
+				 is_maya=False,
+				 slash_replacer_scene_find=None):
+		self.template_name = template_name
+		self.output_dir = output_dir
+		self.logger = logger
+		# self.tool_path = tool_path
+		# self.cmd_command = cmd_command
+		self.scene_ext = scene_ext
+		self.res_path = res_path
+		self.is_maya = is_maya
+		self.slash_replacer_scene_find = slash_replacer_scene_find
+		self.args = args
+		self.scene = None
+		self.scene_file_name = ""
+		self.render_file = ""
+		self.script = ""
+		self.util = None
+
+	def prepare_launch(self):
+		# create util object
+		self.util = Util(ip=self.args.django_ip, logger=self.logger, args=self.args)
+
+		# create output folder for images and logs
+		self.util.create_dir(self.output_dir)
+
+		# unpack all archives
+		unpack_scene(self.args.scene_name)
+		self.scene = self.util.find_scene(*self.scene_ext,
+										  slash_replacer=self.slash_replacer_scene_find,
+										  is_maya=self.is_maya)
+
+		project = None
+		if self.is_maya:
+			# detect project path for maya
+			files = os.listdir(os.getcwd())
+			zip_file = False
+			for file in files:
+				if file.endswith(".zip") or file.endswith(".7z"):
+					zip_file = True
+					project = "/".join(self.scene.split("/")[:-2])
+
+			if not zip_file:
+				project = self.res_path
+
+		script_template = self.util.read_file(self.template_name)
+		self.script = self.util.format_template_with_args(script_template,
+														  res_path=self.res_path,
+														  scene_path=self.scene,
+														  project=project)
+		self.scene_file_name = self.util.get_file_name(self.scene)
+		self.render_file = self.util.save_render_file(self.script, self.scene_file_name,
+													  self.util.get_file_type(self.template_name))
+
+	def update_render_status(self, status, log_message):
+		self.logger.info(log_message)
+		post_data = {'status': status, 'id': self.args.id}
+		self.util.send_status(post_data)
+
+	def send_start_rendering(self):
+		self.update_render_status('Rendering', "Starting rendering scene: {}".format(self.scene))
+
+	def send_finish_rendering(self, ):
+		self.update_render_status('Completed', "Finished rendering scene: {}".format(self.scene))
+
+	def send_result_data(self, rc):
+		files = self.util.create_files_dict(self.output_dir)
+		rc, post_data = self.util.create_result_status_post_data(rc, self.output_dir)
+		self.util.send_status(post_data, files)
+
+
+class MayaLauncher(RenderLauncher):
+	def __init__(self, logger, output_dir):
+		# parse command line args
+		args = Util.get_render_args('--batchRender')
+		RenderLauncher.__init__(self,
+								args=args,
+								template_name="maya_batch_render.py" if args.batchRender == "true" else "maya_render.py",
+								output_dir=output_dir,
+								logger=logger,
+								scene_ext=['.ma', '.mb'],
+								res_path=os.getcwd().replace("\\", "/") + "/",
+								is_maya=True,
+								slash_replacer_scene_find='/')
