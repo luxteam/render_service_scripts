@@ -233,8 +233,6 @@ class RenderLauncher:
 	def __init__(self, template_name,
 				 output_dir,
 				 logger,
-				 # tool_path,
-				 # cmd_command,
 				 scene_ext,
 				 res_path,
 				 args,
@@ -243,8 +241,6 @@ class RenderLauncher:
 		self.template_name = template_name
 		self.output_dir = output_dir
 		self.logger = logger
-		# self.tool_path = tool_path
-		# self.cmd_command = cmd_command
 		self.scene_ext = scene_ext
 		self.res_path = res_path
 		self.is_maya = is_maya
@@ -387,3 +383,16 @@ class BlenderLauncher(RenderLauncher):
 								logger=logger,
 								scene_ext=['.blend'],
 								res_path=os.getcwd())
+
+
+class MaxLauncher(RenderLauncher):
+	def __init__(self, logger, output_dir):
+		args = Util.get_render_args()
+		RenderLauncher.__init__(self,
+								args=args,
+								template_name="max_render.ms",
+								output_dir=output_dir,
+								logger=logger,
+								scene_ext=['.max'],
+								res_path=os.getcwd().replace("\\", "\\\\"),
+								slash_replacer_scene_find="\\\\")
