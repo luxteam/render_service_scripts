@@ -1,6 +1,5 @@
 import requests
 import argparse
-import config
 import urllib3
 import logging
 import os
@@ -14,6 +13,8 @@ def main():
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--version')
+	parser.add_argument('--jenkins_username')
+	parser.add_argument('--jenkins_password')
 	args = parser.parse_args()
 
 	urllib3.disable_warnings()
@@ -22,7 +23,7 @@ def main():
 	while try_count < 3:
 		try:
 			response = requests.get("https://rpr.cis.luxoft.com/job/RadeonProViewerAuto/job/master/{}/artifact/RprViewer_Windows.zip"\
-				.format(args.version), auth=(config.jenkins_username, config.jenkins_password), verify=False, timeout=None)
+				.format(args.version), auth=(args.jenkins_username, args.jenkins_password), verify=False, timeout=None)
 			original_size = response.headers['Content-Length']
 			logger.info("Original size: " + original_size)
 		

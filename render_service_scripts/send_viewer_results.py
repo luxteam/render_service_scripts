@@ -1,7 +1,12 @@
 import requests
-import config
 import json
 import argparse
+import os
+import logging
+
+# logging
+logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def main():
@@ -10,59 +15,41 @@ def main():
 	parser.add_argument('--status')
 	parser.add_argument('--id')
 	parser.add_argument('--django_ip')
-	parser.add_argument('--jenkins_job')
 	parser.add_argument('--build_number')
 	args = parser.parse_args()
 
-	django_url = args.django_ip
+	# preparing dict with output files for post
+	files = {}
+	# search zip archive and logs
+	output_files = os.listdir('.')
+	for output_file in output_files:
+		if output_file.endswith('.zip') or output_file.endswith('.txt'):
+			files.update({output_file: open(output_file, 'rb')})
+	# search output image and logs
+	output_files = os.listdir('viewer_dir')
+	for output_file in output_files:
+		if output_file.endswith('.txt') or output_file == 'img0001.png':
+			files.update({output_file: open(os.path.join('viewer_dir', output_file), 'rb')})
+	logger.info("Output files: {}".format(files))
+
+	post_data = {'status': args.status, 'id': args.id, 'build_number': args.build_number}
 
 	try_count = 0
 	while try_count < 3:
 		try:
-			response = requests.get("http://rpr.cis.luxoft.com/job/{jenkins_job}/{build_number}/api/json?pretty=true".format(jenkins_job=args.jenkins_job, build_number=args.build_number), \
-				auth=(config.jenkins_username, config.jenkins_password))
+			response = requests.post(args.django_ip, data=post_data, files=files)
 			if response.status_code  == 200:
-				print("GET request successfuly done.")
+				logger.info("POST request successfuly sent.")
 				break
 			else:
-				print("GET request failed, status code: " + str(response.status_code))
+				logger.info("POST reques failed, status code: " + str(response.status_code))
 				break
 		except Exception as e:
 			if try_count == 2:
-				print("GET request try 3 failed. Finishing work.")
+				logger.info("POST request try 3 failed. Finishing work.")
 				break
 			try_count += 1
-			print("GET request failed. Retry ...")
-		
-
-	job_json = json.loads(response.text)
-
-	artifacts = {}
-	for job in job_json['artifacts']:
-		artifacts[job['fileName']] = "http://172.30.23.112:8088/job/{jenkins_job}/{build_number}/artifact/{art}"\
-			.format(jenkins_job=args.jenkins_job, build_number=args.build_number, art=job['relativePath'])
-
-	zip_link = "http://172.30.23.112:8088/job/{jenkins_job}/{build_number}/artifact/*zip*/archive.zip"\
-																					.format(jenkins_job=args.jenkins_job, build_number=args.build_number)
-
-	post_data = {'status': args.status, 'artifacts':str(artifacts), 'id': args.id, 'zip_link':zip_link, 'build_number': args.build_number}
-
-	try_count = 0
-	while try_count < 3:	
-		try:
-			response = requests.post(django_url, data=post_data)
-			if response.status_code  == 200:
-				print("POST request successfuly sent.")
-				break
-			else:
-				print("POST request failed, status code: " + str(response.status_code))
-				break
-		except Exception as e:
-			if try_count == 2:
-				print("POST request try 3 failed. Finishing work.")
-				break
-			try_count += 1
-			print("POST request failed. Retry ...")
+			logger.info("POST request failed. Retry ...")
 		
 if __name__ == "__main__":
 	main()

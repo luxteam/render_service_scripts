@@ -5,17 +5,29 @@ import subprocess
 import psutil
 import logging
 import traceback
+from render_service_scripts.unpack import unpack_all
+import shutil
 
 # logging
-logging.basicConfig(filename="python_log.txt", level=logging.INFO)
+logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def build_viewer_pack(version, filename):
+		try:
+			zip_name = "RPRViewerPack_{}_{}".format(version, filename)	
+			shutil.make_archive(zip_name, 'zip', 'viewer_dir')
+		except Exception as ex:
+			logger.error("Zip package build failed.")
+			logger.error(str(ex))
+			logger.error(traceback.format_exc())	
+			exit(1)
 
 
 def main():
 
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--scene_name')
-	parser.add_argument('--scene_version')
 	parser.add_argument('--version')
 	parser.add_argument('--width')
 	parser.add_argument('--height')
@@ -27,7 +39,7 @@ def main():
 	gltf_file = ""
 	ui_config = ""
 	
-	for rootdir, dirs, files in os.walk("scene"):
+	for rootdir, dirs, files in os.walk(os.path.join('viewer_dir', 'scene')):
 		for file in files:
 			if file.endswith('.gltf'):
 				gltf_file = os.path.join("scene", file)
@@ -47,10 +59,10 @@ def main():
 		logger.error("No UI config in the package!")
 
 	# read config json file
-	if os.path.isfile("config.json"):
+	if os.path.isfile(os.path.join('viewer_dir', 'config.json')):
 		logger.info("Found config file.")
 		try:
-			with open("config.json") as f:
+			with open(os.path.join('viewer_dir', 'config.json')) as f:
 				config = json.loads(f.read())
 			logger.info("Config file was read successfuly.")
 		except Exception as ex:
@@ -73,12 +85,11 @@ def main():
 		
 	config['uiConfig'] = ui_config
 
-	with open('config.json', 'w') as f:
+	with open(os.path.join('viewer_dir', 'config.json'), 'w') as f:
 		json.dump(config, f, indent=' ', sort_keys=True)
 		
 	# parse scene name
-	split_name = args.scene_name.split('.')
-	filename = '.'.join(split_name[0:-1])
+	filename = args.scene_name.rsplit('.', 1)[0]
 
 	# pack zip
 	repeat_launch = False
@@ -87,28 +98,22 @@ def main():
 			repeat_launch = True
 
 	if not repeat_launch:
-		try:
-			zip_name = "RPRViewerPack_{}_{}.zip".format(args.version, filename)	
-			st = psutil.Popen('7z a "{}" ./"{}"/*'.format(zip_name, "."), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-			st.communicate()
-			logger.info("Zip package was built successfuly.")
-		except Exception as ex:
-			logger.error("Zip package build failed.")
-			logger.error(str(ex))
-			logger.error(traceback.format_exc())	
-			exit(1)
+		build_viewer_pack(args.version, filename)
 
-	config['save_frames'] = "yes"
+	config['save_frames'] = True
 	config['iterations_per_frame'] = int(args.iterations)
 	config['frame_exit_after'] = 1
-	with open('config.json', 'w') as f:
+	with open(os.path.join('viewer_dir', 'config.json'), 'w') as f:
 		json.dump(config, f, indent=' ')
 	
 	# Fix empty stdout 113 line.
 	stdout, stderr = (b'', b'')
 
-	if os.path.isfile("RadeonProViewer.exe"):
-		p = psutil.Popen("RadeonProViewer.exe", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	#change dir before call viewer (it search config in current dir)
+	os.chdir('viewer_dir')
+
+	if os.path.isfile('RadeonProViewer.exe'):
+		p = psutil.Popen('RadeonProViewer.exe', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		try:
 			stdout, stderr = p.communicate(timeout=300)
 		except (subprocess.TimeoutExpired, psutil.TimeoutExpired) as err:
@@ -131,6 +136,8 @@ def main():
 		
 		if not os.path.isfile("img0001.png") and args.engine != "ogl":
 			logger.error("Failed to render image! Retry ...")
+			#return to workdir
+			os.chdir('..')
 			raise Exception("No image")
 		else:
 			logger.info("Testing was finished successfuly.")
@@ -138,9 +145,14 @@ def main():
 	else:
 		logger.error("Failed! No exe file in package.")
 		exit(1)
+
+	#return to workdir
+	os.chdir('..')
 	
 if __name__ == "__main__":
 	try_count = 0
+	# unpack all archives
+	unpack_all(os.path.join('.', 'viewer_dir'), delete=True, output_dir=os.path.join('.', 'viewer_dir'))
 	while try_count < 3:
 		try:
 			main()
