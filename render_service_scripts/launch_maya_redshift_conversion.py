@@ -66,7 +66,7 @@ def main():
 	filename = util.get_file_name(maya_scene)
 
 	# save render py file
-	redshift_render_file = util.save_render_file(redshift_script, 'redshift_{}'.format(filename), 'py')
+	redshift_render_file = util.get_file_name(util.save_render_file(redshift_script, 'redshift_{}'.format(filename), 'py'))
 
 	# Redshift batch render
 	cmd_command = '''
@@ -74,7 +74,7 @@ def main():
 		set MAYA_SCRIPT_PATH=%cd%;%MAYA_SCRIPT_PATH%
 		set PYTHONPATH=%cd%;%PYTHONPATH%
 		"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -r redshift -preRender "python(\\"import {redshift_render_file} as render\\"); python(\\"render.main()\\");" -log "Output\\batch_redshift_render_log.txt" -of jpg {maya_scene}
-		'''.format(tool=args.tool, maya_scene=maya_scene, redshift_render_file=redshift_render_file.split('.')[0])
+		'''.format(tool=args.tool, maya_scene=maya_scene, redshift_render_file=redshift_render_file)
 	render_bat_file = "launch_redshift_render_{}.bat".format(filename)
 	with open(render_bat_file, 'w') as f:
 		f.write(cmd_command)		
