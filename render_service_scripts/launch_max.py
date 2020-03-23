@@ -1,14 +1,7 @@
-import argparse
-import sys
 import os
 import subprocess
 import psutil
-import json
-import ctypes
-import requests
-import glob
 import logging
-from render_service_scripts.unpack import unpack_scene
 from render_service_scripts.utils import MaxLauncher
 
 
