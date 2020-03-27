@@ -33,6 +33,8 @@ def main():
 	parser.add_argument('--height')
 	parser.add_argument('--engine')
 	parser.add_argument('--iterations')
+	parser.add_argument('--login')
+	parser.add_argument('--password')
 	args = parser.parse_args()
 
 	# find GLTF scene and UIConfig

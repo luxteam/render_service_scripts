@@ -1,6 +1,7 @@
 import requests
 import json
 import argparse
+from requests.auth import HTTPBasicAuth
 
 
 def main():
@@ -9,6 +10,8 @@ def main():
 	parser.add_argument('--status')
 	parser.add_argument('--id')
 	parser.add_argument('--django_ip')
+	parser.add_argument('--login')
+	parser.add_argument('--password')
 	args = parser.parse_args()
 
 	post_data = {'status': args.status, 'id': args.id}
@@ -16,7 +19,7 @@ def main():
 	try_count = 0
 	while try_count < 3:
 		try:
-			response = requests.post(args.django_ip, data=post_data)
+			response = requests.post(args.django_ip, data=post_data, auth=HTTPBasicAuth(args.login, args.password))
 			if response.status_code  == 200:
 				print("POST request successfuly sent.")
 				break
