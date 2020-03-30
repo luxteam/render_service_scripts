@@ -6,6 +6,8 @@ import subprocess
 import psutil
 import json
 import requests
+from render_service_scripts.unpack import unpack_scene
+from requests.auth import HTTPBasicAuth
 
 def parse_scenename(name):
 	split_name = name.split('.')
@@ -23,7 +25,7 @@ def getScenes(folder):
 	scenes = []
 	for rootdir, dirs, files in os.walk(folder):
 		for file in files:
-			if file.endswith('.rpr'):
+			if file.endswith('.rpr') or file.endswith('.gltf'):
 				scenes.append(os.path.join(rootdir, file))
 
 	return scenes
@@ -43,6 +45,8 @@ def main():
 	parser.add_argument('--startFrame', required=True)
 	parser.add_argument('--endFrame', required=True)
 	parser.add_argument('--gpu', required=True)
+	parser.add_argument('--login', required=True)
+	parser.add_argument('--password', required=True)
 
 	args = parser.parse_args()
 
@@ -54,6 +58,7 @@ def main():
 		os.makedirs('Output')
 	output_path = os.path.join(current_path, "Output")
 
+	unpack_scene(args.sceneName)
 	scenes = getScenes(current_path)
 
 	timeout = 3600 / len(scenes)
@@ -137,7 +142,7 @@ def main():
 		for frame in range(startFrame, endFrame + 1):
 
 			post_data = {'tool': 'Core', 'current_frame': frame, 'id': args.id, 'status':'frame'}
-			response = requests.post(args.django_ip, data=post_data)
+			response = requests.post(args.django_ip, data=post_data, auth=HTTPBasicAuth(args.login, args.password))
 
 			config_json = {}
 			config_json["width"] = int(args.width)
@@ -273,7 +278,7 @@ def main():
 
 	render_time = round(render_time, 2)
 	post_data = {'tool': 'Core', 'render_time': render_time, 'id': args.id, 'status':'time'}
-	#response = requests.post(args.django_ip, data=post_data)
+	response = requests.post(args.django_ip, data=post_data, auth=HTTPBasicAuth(args.login, args.password))
 
 if __name__ == "__main__":
 	rc = main()
