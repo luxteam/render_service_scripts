@@ -37,7 +37,6 @@ def main():
 	parser.add_argument('--django_ip', required=True)
 	parser.add_argument('--id', required=True)
 
-	parser.add_argument('--tool', required=True)
 	parser.add_argument('--pass_limit', required=True)
 	parser.add_argument('--width', required=True)
 	parser.add_argument('--height', required=True)
@@ -209,7 +208,7 @@ def main():
 
 		for scene in scenes:
 			sceneName = os.path.basename(str_to_raw(scene))
-			file_name, file_format = parse_scenename(scene)
+			file_name, file_format = parse_scenename(sceneName)
 
 			frame = re.findall(r'_\d+', file_name)
 			if frame:
