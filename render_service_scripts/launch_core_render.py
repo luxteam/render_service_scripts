@@ -6,8 +6,15 @@ import subprocess
 import psutil
 import json
 import requests
+import logging
+import glob
 from render_service_scripts.unpack import unpack_scene
 from requests.auth import HTTPBasicAuth
+
+# logging
+logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')
+logger = logging.getLogger(__name__)
+
 
 def parse_scenename(name):
 	split_name = name.split('.')
@@ -30,13 +37,52 @@ def getScenes(folder):
 
 	return scenes
 
+
+def send_status(post_data, django_ip, login, password):	
+	try_count = 0
+	while try_count < 3:
+		try:
+			response = requests.post(django_ip, data=post_data, auth=HTTPBasicAuth(login, password))
+			if response.status_code  == 200:
+				logger.info("POST request successfuly sent.")
+				break
+			else:
+				logger.info("POST reques failed, status code: " + str(response.status_code))
+				break
+		except Exception as e:
+			if try_count == 2:
+				logger.info("POST request try 3 failed. Finishing work.")
+				break
+			try_count += 1
+			logger.info("POST request failed. Retry ...")
+
+
+def send_results(post_data, files, django_ip, login, password):
+	try_count = 0
+	while try_count < 3:
+		try:
+			response = requests.post(django_ip, data=post_data, files=files, auth=HTTPBasicAuth(login, password))
+			if response.status_code  == 200:
+				logger.info("POST request successfuly sent.")
+				break
+			else:
+				logger.info("POST reques failed, status code: " + str(response.status_code))
+				break
+		except Exception as e:
+			if try_count == 2:
+				logger.info("POST request try 3 failed. Finishing work.")
+				break
+			try_count += 1
+			logger.info("POST request failed. Retry ...")
+
+
 def main():
 
 	parser = argparse.ArgumentParser()
 
 	parser.add_argument('--django_ip', required=True)
 	parser.add_argument('--id', required=True)
-
+	parser.add_argument('--build_number', required=True)
 	parser.add_argument('--pass_limit', required=True)
 	parser.add_argument('--width', required=True)
 	parser.add_argument('--height', required=True)
@@ -67,6 +113,8 @@ def main():
 		animation = False
 	else:
 		animation = True
+
+	invalid_rcs = 0	
 
 	# single rpr file
 	if len(scenes) == 1:
@@ -120,6 +168,7 @@ def main():
 			rc = p.wait(timeout=timeout)
 		except psutil.TimeoutExpired as err:
 			rc = -1
+			invalid_rcs += 1
 			for child in reversed(p.children(recursive=True)):
 				child.terminate()
 			p.terminate()
@@ -139,9 +188,8 @@ def main():
 		file_name, file_format = parse_scenename(sceneName)
 
 		for frame in range(startFrame, endFrame + 1):
-
-			post_data = {'tool': 'Core', 'current_frame': frame, 'id': args.id, 'status':'frame'}
-			response = requests.post(args.django_ip, data=post_data, auth=HTTPBasicAuth(args.login, args.password))
+			post_data = {'status': 'Rendering. Current_frame №' + str(frame), 'id': args.id}
+			send_status(post_data, args.django_ip, args.login, args.password, auth=HTTPBasicAuth(args.login, args.password))
 
 			config_json = {}
 			config_json["width"] = int(args.width)
@@ -193,6 +241,7 @@ def main():
 				rc = p.wait(timeout=timeout)
 			except psutil.TimeoutExpired as err:
 				rc = -1
+				invalid_rcs += 1
 				for child in reversed(p.children(recursive=True)):
 					child.terminate()
 				p.terminate()
@@ -262,6 +311,7 @@ def main():
 				rc = p.wait(timeout=timeout)
 			except psutil.TimeoutExpired as err:
 				rc = -1
+				invalid_rcs += 1
 				for child in reversed(p.children(recursive=True)):
 					child.terminate()
 				p.terminate()
@@ -274,10 +324,44 @@ def main():
 			except:
 				print("Error render")
 
+	# preparing dict with output files for post
+	files = {}
+	output_files = os.listdir('Output')
+	for output_file in output_files:
+		files.update({output_file: open(os.path.join('Output', output_file), 'rb')})
+	logger.info("Output files: {}".format(files))
 
+	# detect render status
+	status = "Unknown"
+	fail_reason = "Unknown"
+
+	images = glob.glob(os.path.join('Output' ,'*.png'))
+	if invalid_rcs == 0 and images:
+		rc = 0
+		logger.info("Render status: success")
+		status = "Success"
+	else:
+		logger.info("Render status: failure")
+		status = "Failure"
+		if invalid_rcs > 0:
+			rc = -1
+			logger.info("Fail reason: timeout expired")
+			fail_reason = "Timeout expired"
+		elif images != len(scenes):
+			rc = -1
+			frames_without_image = len(scenes) * (args.endFrame - args.startFrame + 1) - len(image)
+			logger.info("Fail reason: rendering failed, no output image for " + str(frames_without_image) + " frames")
+			fail_reason = "No output image for " + str(frames_without_image) + " frames"
+		else:
+			rc = -1
+			logger.info("Fail reason: unknown")
+			fail_reason = "Unknown"
+
+
+	logger.info("Sending results")
 	render_time = round(render_time, 2)
-	post_data = {'tool': 'Core', 'render_time': render_time, 'id': args.id, 'status':'time'}
-	response = requests.post(args.django_ip, data=post_data, auth=HTTPBasicAuth(args.login, args.password))
+	post_data = {'status': status, 'fail_reason': fail_reason, 'id': args.id, 'build_number': args.build_number}
+	send_results(post_data, files, args.django_ip, args.login, args.password)
 
 if __name__ == "__main__":
 	rc = main()
