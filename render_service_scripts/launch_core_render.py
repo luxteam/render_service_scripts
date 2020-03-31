@@ -328,6 +328,8 @@ def main():
 	files = {}
 	output_files = os.listdir('Output')
 	for output_file in output_files:
+		if output_file.endswith('.json'):
+			continue
 		files.update({output_file: open(os.path.join('Output', output_file), 'rb')})
 	logger.info("Output files: {}".format(files))
 
