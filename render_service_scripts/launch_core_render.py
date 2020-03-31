@@ -186,8 +186,8 @@ def main():
 		file_name, file_format = parse_scenename(sceneName)
 
 		for frame in range(startFrame, endFrame + 1):
-			post_data = {'status': 'Rendering. Current_frame №' + str(frame), 'id': args.id}
-			send_status(post_data, args.django_ip, args.login, args.password, auth=HTTPBasicAuth(args.login, args.password))
+			post_data = {'status': 'Rendering. Current frame №' + str(frame), 'id': args.id}
+			send_status(post_data, args.django_ip, args.login, args.password)
 
 			config_json = {}
 			config_json["width"] = int(args.width)
@@ -250,8 +250,11 @@ def main():
 				print("Error render")
 
 	else:
-
+		scenes_rendered = 0
 		for scene in scenes:
+			post_data = {'status': 'Rendering (' + str(scenes_rendered) + ' of ' + str(len(scenes)) + ')', 'id': args.id}
+			send_status(post_data, args.django_ip, args.login, args.password)
+
 			sceneName = os.path.basename(str_to_raw(scene))
 			file_name, file_format = parse_scenename(sceneName)
 
@@ -317,6 +320,8 @@ def main():
 				render_time += data['render.time.ms'] / 1000
 			except:
 				print("Error render")
+
+			scenes_rendered += 1
 
 	# preparing dict with output files for post
 	files = {}
