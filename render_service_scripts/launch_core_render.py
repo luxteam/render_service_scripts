@@ -295,13 +295,16 @@ def main():
 	fail_reason = "Unknown"
 
 	images = glob.glob(os.path.join('Output' ,'*.png'))
-	all_frames_number = len(scenes) * (int(args.endFrame) - int(args.startFrame) + 1)
-	frames_without_image = all_frames_number - len(images)
+	if animation:
+		total_frames_number = int(args.endFrame) - int(args.startFrame) + 1
+	else:
+		total_frames_number = len(scenes)
+	frames_without_image = total_frames_number - len(images)
 	if invalid_rcs == 0 and frames_without_image == 0:
 		rc = 0
 		logger.info("Render status: success")
 		status = "Success"
-	elif invalid_rcs < all_frames_number and frames_without_image < all_frames_number:
+	elif invalid_rcs < total_frames_number and frames_without_image < total_frames_number:
 		rc = 0
 		logger.info("Render status: success partially")
 		status = "Success (partially)"
@@ -310,11 +313,11 @@ def main():
 	else:
 		logger.info("Render status: failure")
 		status = "Failure"
-		if invalid_rcs == all_frames_number:
+		if invalid_rcs == total_frames_number:
 			rc = -1
 			logger.info("Fail reason: timeout expired for all frames")
 			fail_reason = "Timeout expired for all frames"
-		elif frames_without_image == all_frames_number:
+		elif frames_without_image == total_frames_number:
 			rc = -1
 			logger.info("Fail reason: rendering failed, no output image for all frames")
 			fail_reason = "No output image for all frames"
