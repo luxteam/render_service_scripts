@@ -153,7 +153,6 @@ def main():
 
 		p = psutil.Popen(cmdScriptPath, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		stdout, stderr = p.communicate()
-		rc = 0
 
 		with open(os.path.join('Output', "core_log.txt"), 'a', encoding='utf-8') as file:
 			stdout = stdout.decode("utf-8")
@@ -165,10 +164,9 @@ def main():
 			file.write(stderr)
 
 		try:
-			rc = p.wait(timeout=timeout)
+			p.wait(timeout=timeout)
 		except psutil.TimeoutExpired as err:
-			rc = -1
-			invalid_rcs += 1
+			invalid_rcs = 1
 			for child in reversed(p.children(recursive=True)):
 				child.terminate()
 			p.terminate()
@@ -226,7 +224,6 @@ def main():
 
 			p = psutil.Popen(cmdScriptPath, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 			stdout, stderr = p.communicate()
-			rc = 0
 
 			with open(os.path.join('Output', "core_log.txt"), 'a', encoding='utf-8') as file:
 				stdout = stdout.decode("utf-8")
@@ -238,9 +235,8 @@ def main():
 				file.write(stderr)
 
 			try:
-				rc = p.wait(timeout=timeout)
+				p.wait(timeout=timeout)
 			except psutil.TimeoutExpired as err:
-				rc = -1
 				invalid_rcs += 1
 				for child in reversed(p.children(recursive=True)):
 					child.terminate()
@@ -296,7 +292,6 @@ def main():
 
 			p = psutil.Popen(cmdScriptPath, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 			stdout, stderr = p.communicate()
-			rc = 0
 
 			with open(os.path.join('Output', "core_log.txt"), 'a', encoding='utf-8') as file:
 				stdout = stdout.decode("utf-8")
@@ -308,9 +303,8 @@ def main():
 				file.write(stderr)
 
 			try:
-				rc = p.wait(timeout=timeout)
+				p.wait(timeout=timeout)
 			except psutil.TimeoutExpired as err:
-				rc = -1
 				invalid_rcs += 1
 				for child in reversed(p.children(recursive=True)):
 					child.terminate()
@@ -338,26 +332,29 @@ def main():
 	fail_reason = "Unknown"
 
 	images = glob.glob(os.path.join('Output' ,'*.png'))
-	if invalid_rcs == 0 and images:
+	all_frames_number = len(scenes) * (int(args.endFrame) - int(args.startFrame) + 1)
+	frames_without_image = all_frames_number - len(images)
+	if invalid_rcs == 0 and frames_without_image == 0:
 		rc = 0
 		logger.info("Render status: success")
 		status = "Success"
+	elif invalid_rcs < all_frames_number and frames_without_image < all_frames_number:
+		rc = 0
+		logger.info("Render status: success partially")
+		status = "Success (partially)"
+		logger.info("Fail reason: timeout expired for " + str(invalid_rcs) + " frames and no output image for " + str(frames_without_image) + " frames")
+		fail_reason = "Timeout expired for " + str(invalid_rcs) + " frames and no output image for " + str(frames_without_image) + " frames"
 	else:
 		logger.info("Render status: failure")
 		status = "Failure"
-		if invalid_rcs > 0:
+		if invalid_rcs == all_frames_number:
 			rc = -1
-			logger.info("Fail reason: timeout expired")
-			fail_reason = "Timeout expired"
-		elif images != len(scenes):
+			logger.info("Fail reason: timeout expired for all frames")
+			fail_reason = "Timeout expired for all frames"
+		elif frames_without_image == all_frames_number:
 			rc = -1
-			frames_without_image = len(scenes) * (args.endFrame - args.startFrame + 1) - len(image)
-			logger.info("Fail reason: rendering failed, no output image for " + str(frames_without_image) + " frames")
-			fail_reason = "No output image for " + str(frames_without_image) + " frames"
-		else:
-			rc = -1
-			logger.info("Fail reason: unknown")
-			fail_reason = "Unknown"
+			logger.info("Fail reason: rendering failed, no output image for all frames")
+			fail_reason = "No output image for all frames"
 
 	logger.info("Sending render time")
 	render_time = round(render_time, 2)
