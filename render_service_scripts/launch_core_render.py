@@ -76,6 +76,46 @@ def send_results(post_data, files, django_ip, login, password):
 			logger.info("POST request failed. Retry ...")
 
 
+def configure_json(args):
+		config_json = {}
+		config_json["width"] = int(args.width)
+		config_json["height"] = int(args.height)
+		config_json["iterations"] = int(args.pass_limit)
+		config_json["threads"] = 4
+		config_json["context"] = {
+			"gpu0": 1 if 'gpu0' in args.gpu else 0,
+			"gpu1": 1 if 'gpu1' in args.gpu else 0,
+			"gpu2": 1 if 'gpu2' in args.gpu else 0,
+			"gpu3": 1 if 'gpu3' in args.gpu else 0,
+			"gpu4": 1 if 'gpu4' in args.gpu else 0,
+			"gpu5": 1 if 'gpu5' in args.gpu else 0,
+			"threads": 16,
+			"debug": 0
+		}
+		return config_json
+
+
+def save_configured_files(ScriptPath, config_json, cmdScriptPath, cmdRun):
+	try:
+		with open(ScriptPath, 'w') as f:
+			json.dump(config_json, f, indent=4)
+		with open(cmdScriptPath, 'w') as f:
+			f.write(cmdRun)
+	except OSError as err:
+		pass
+
+
+def update_core_log(stdout, stderr):
+	with open(os.path.join('Output', "core_log.txt"), 'a', encoding='utf-8') as file:
+		stdout = stdout.decode("utf-8")
+		file.write(stdout)
+
+	with open(os.path.join('Output', "core_log.txt"), 'a', encoding='utf-8') as file:
+		file.write("\n ----STEDERR---- \n")
+		stderr = stderr.decode("utf-8")
+		file.write(stderr)
+
+
 def main():
 
 	parser = argparse.ArgumentParser()
@@ -121,47 +161,20 @@ def main():
 		sceneName = os.path.basename(str_to_raw(args.sceneName))
 		file_name, file_format = parse_scenename(sceneName)
 
-		config_json = {}
-		config_json["width"] = int(args.width)
-		config_json["height"] = int(args.height)
-		config_json["iterations"] = int(args.pass_limit)
-		config_json["threads"] = 4
+		config_json = configure_json(args)
 		config_json["output"] = os.path.join(output_path, file_name + ".png")
 		config_json["output.json"] = os.path.join(output_path, file_name + ".json")
-		config_json["context"] = {
-			"gpu0": 1 if 'gpu0' in args.gpu else 0,
-			"gpu1": 1 if 'gpu1' in args.gpu else 0,
-			"gpu2": 1 if 'gpu2' in args.gpu else 0,
-			"gpu3": 1 if 'gpu3' in args.gpu else 0,
-			"gpu4": 1 if 'gpu4' in args.gpu else 0,
-			"gpu5": 1 if 'gpu5' in args.gpu else 0,
-			"threads": 16,
-			"debug": 0
-		}
 
 		ScriptPath = os.path.join(current_path, "cfg_{}.json".format(file_name))
 		cmdRun = '"{tool}" "{scene}" "{template}"\n'.format(tool="C:\\rprSdkWin64\\RprsRender64.exe", scene=scenes[0], template=ScriptPath)
 		cmdScriptPath = os.path.join(current_path, '{}.bat'.format(file_name))
-		
-		try:
-			with open(ScriptPath, 'w') as f:
-				json.dump(config_json, f, indent=4)
-			with open(cmdScriptPath, 'w') as f:
-				f.write(cmdRun)
-		except OSError as err:
-			pass
+
+		save_configured_files(ScriptPath, config_json, cmdScriptPath, cmdRun)
 
 		p = psutil.Popen(cmdScriptPath, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		stdout, stderr = p.communicate()
 
-		with open(os.path.join('Output', "core_log.txt"), 'a', encoding='utf-8') as file:
-			stdout = stdout.decode("utf-8")
-			file.write(stdout)
-
-		with open(os.path.join('Output', "core_log.txt"), 'a', encoding='utf-8') as file:
-			file.write("\n ----STEDERR---- \n")
-			stderr = stderr.decode("utf-8")
-			file.write(stderr)
+		update_core_log(stdout, stderr)
 
 		try:
 			p.wait(timeout=timeout)
@@ -171,9 +184,7 @@ def main():
 				child.terminate()
 			p.terminate()
 
-		
-
-		# post request
+		# get render time
 		try:
 			with open(os.path.join(output_path, file_name + ".json")) as f:
 				data = json.loads(f.read().replace("\\", "\\\\"))
@@ -189,23 +200,9 @@ def main():
 			post_data = {'status': 'Rendering. Current frame №' + str(frame), 'id': args.id}
 			send_status(post_data, args.django_ip, args.login, args.password)
 
-			config_json = {}
-			config_json["width"] = int(args.width)
-			config_json["height"] = int(args.height)
-			config_json["iterations"] = int(args.pass_limit)
-			config_json["threads"] = 4
+			config_json = configure_json(args)
 			config_json["output"] = os.path.join(output_path, file_name + "_" + str(frame).zfill(3) + ".png")
 			config_json["output.json"] = os.path.join(output_path, file_name + "_" + str(frame).zfill(3) + ".json")
-			config_json["context"] = {
-				"gpu0": 1 if 'gpu0' in args.gpu else 0,
-				"gpu1": 1 if 'gpu1' in args.gpu else 0,
-				"gpu2": 1 if 'gpu2' in args.gpu else 0,
-				"gpu3": 1 if 'gpu3' in args.gpu else 0,
-				"gpu4": 1 if 'gpu4' in args.gpu else 0,
-				"gpu5": 1 if 'gpu5' in args.gpu else 0,
-				"threads": 16,
-				"debug": 0
-			}
 
 			scene_name = scenes[0].split("\\")[-1].split(".")[0]
 			scene = scenes[0].replace(scene_name, file_name + "_" + str(frame))	
@@ -214,25 +211,12 @@ def main():
 			cmdRun = '"{tool}" "{scene}" "{template}"\n'.format(tool="C:\\rprSdkWin64\\RprsRender64.exe", scene=scene, template=ScriptPath)
 			cmdScriptPath = os.path.join(current_path, '{}.bat'.format(file_name + "_" + str(frame)))
 			
-			try:
-				with open(ScriptPath, 'w') as f:
-					json.dump(config_json, f, indent=4)
-				with open(cmdScriptPath, 'w') as f:
-					f.write(cmdRun)
-			except OSError as err:
-				pass
+			save_configured_files(ScriptPath, config_json, cmdScriptPath, cmdRun)
 
 			p = psutil.Popen(cmdScriptPath, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 			stdout, stderr = p.communicate()
 
-			with open(os.path.join('Output', "core_log.txt"), 'a', encoding='utf-8') as file:
-				stdout = stdout.decode("utf-8")
-				file.write(stdout)
-
-			with open(os.path.join('Output', "core_log.txt"), 'a', encoding='utf-8') as file:
-				file.write("\n ----STEDERR---- \n")
-				stderr = stderr.decode("utf-8")
-				file.write(stderr)
+			update_core_log(stdout, stderr)
 
 			try:
 				p.wait(timeout=timeout)
@@ -242,6 +226,7 @@ def main():
 					child.terminate()
 				p.terminate()
 
+			# get render time
 			try:
 				with open(os.path.join(output_path, file_name + "_" + str(frame).zfill(3) + ".json")) as f:
 					data = json.loads(f.read().replace("\\", "\\\\"))
@@ -263,47 +248,20 @@ def main():
 				frame = int(frame[-1][1:])
 				file_name = '_'.join(sceneName.split("_")[0:-1]) + '_' + str(frame).zfill(3)
 
-			config_json = {}
-			config_json["width"] = int(args.width)
-			config_json["height"] = int(args.height)
-			config_json["iterations"] = int(args.pass_limit)
-			config_json["threads"] = 4
+			config_json = configure_json(args)
 			config_json["output"] = os.path.join(output_path, file_name + ".png")
 			config_json["output.json"] = os.path.join(output_path, file_name + ".json")
-			config_json["context"] = {
-				"gpu0": 1 if 'gpu0' in args.gpu else 0,
-				"gpu1": 1 if 'gpu1' in args.gpu else 0,
-				"gpu2": 1 if 'gpu2' in args.gpu else 0,
-				"gpu3": 1 if 'gpu3' in args.gpu else 0,
-				"gpu4": 1 if 'gpu4' in args.gpu else 0,
-				"gpu5": 1 if 'gpu5' in args.gpu else 0,
-				"threads": 16,
-				"debug": 0
-			}
 
 			ScriptPath = os.path.join(current_path, "cfg_{}.json".format(file_name))
 			cmdRun = '"{tool}" "{scene}" "{template}"\n'.format(tool="C:\\rprSdkWin64\\RprsRender64.exe", scene=scene, template=ScriptPath)
 			cmdScriptPath = os.path.join(current_path, '{}.bat'.format(file_name))
 			
-			try:
-				with open(ScriptPath, 'w') as f:
-					json.dump(config_json, f, indent=4)
-				with open(cmdScriptPath, 'w') as f:
-					f.write(cmdRun)
-			except OSError as err:
-				pass
+			save_configured_files(ScriptPath, config_json, cmdScriptPath, cmdRun)
 
 			p = psutil.Popen(cmdScriptPath, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 			stdout, stderr = p.communicate()
 
-			with open(os.path.join('Output', "core_log.txt"), 'a', encoding='utf-8') as file:
-				stdout = stdout.decode("utf-8")
-				file.write(stdout)
-
-			with open(os.path.join('Output', "core_log.txt"), 'a', encoding='utf-8') as file:
-				file.write("\n ----STEDERR---- \n")
-				stderr = stderr.decode("utf-8")
-				file.write(stderr)
+			update_core_log(stdout, stderr)
 
 			try:
 				p.wait(timeout=timeout)
@@ -313,7 +271,7 @@ def main():
 					child.terminate()
 				p.terminate()
 
-			# post request
+			# get render time
 			try:
 				with open(os.path.join(output_path, file_name + ".json")) as f:
 					data = json.loads(f.read().replace("\\", "\\\\"))
