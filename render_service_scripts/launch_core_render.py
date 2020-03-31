@@ -357,9 +357,12 @@ def main():
 			logger.info("Fail reason: unknown")
 			fail_reason = "Unknown"
 
+	logger.info("Sending render time")
+	render_time = round(render_time, 2)
+	post_data = {'render_time': render_time, 'id': args.id, 'status':'render_info'}
+	send_status(post_data, args.django_ip, args.login, args.password)
 
 	logger.info("Sending results")
-	render_time = round(render_time, 2)
 	post_data = {'status': status, 'fail_reason': fail_reason, 'id': args.id, 'build_number': args.build_number}
 	send_results(post_data, files, args.django_ip, args.login, args.password)
 
