@@ -3,6 +3,7 @@ import json
 import argparse
 import os
 import logging
+from requests.auth import HTTPBasicAuth
 
 # logging
 logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO)
@@ -16,6 +17,8 @@ def main():
 	parser.add_argument('--id')
 	parser.add_argument('--django_ip')
 	parser.add_argument('--build_number')
+	parser.add_argument('--login')
+	parser.add_argument('--password')
 	args = parser.parse_args()
 
 	# preparing dict with output files for post
@@ -37,7 +40,7 @@ def main():
 	try_count = 0
 	while try_count < 3:
 		try:
-			response = requests.post(args.django_ip, data=post_data, files=files)
+			response = requests.post(args.django_ip, data=post_data, files=files, auth=HTTPBasicAuth(args.login, args.password))
 			if response.status_code  == 200:
 				logger.info("POST request successfuly sent.")
 				break

@@ -9,6 +9,7 @@ import requests
 import glob
 import logging
 from render_service_scripts.unpack import unpack_scene
+from requests.auth import HTTPBasicAuth
 
 # logging
 logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')
@@ -25,11 +26,11 @@ def find_max_scene():
 	return scene[0]
 
 
-def send_status(post_data, django_ip):	
+def send_status(post_data, django_ip, login, password):	
 	try_count = 0
 	while try_count < 3:
 		try:
-			response = requests.post(django_ip, data=post_data)
+			response = requests.post(django_ip, data=post_data, auth=HTTPBasicAuth(login, password))
 			if response.status_code  == 200:
 				logger.info("POST request successfuly sent.")
 				break
@@ -44,11 +45,11 @@ def send_status(post_data, django_ip):
 			logger.info("POST request failed. Retry ...")
 
 
-def send_results(post_data, files, django_ip):
+def send_results(post_data, files, django_ip, login, password):
 	try_count = 0
 	while try_count < 3:
 		try:
-			response = requests.post(django_ip, data=post_data, files=files)
+			response = requests.post(django_ip, data=post_data, files=files, auth=HTTPBasicAuth(login, password))
 			if response.status_code  == 200:
 				logger.info("POST request successfuly sent.")
 				break
@@ -100,6 +101,8 @@ def main():
 	parser.add_argument('--width', required=True)
 	parser.add_argument('--height', required=True)
 	parser.add_argument('--scene_name', required=True)
+	parser.add_argument('--login', required=True)
+	parser.add_argument('--password', required=True)
 	args = parser.parse_args()
 
 	# create output folder for images and logs
@@ -140,7 +143,7 @@ def main():
 	# starting rendering
 	logger.info("Starting rendering scene: {}".format(max_scene))
 	post_data = {'status': 'Rendering', 'id': args.id}
-	send_status(post_data, args.django_ip)
+	send_status(post_data, args.django_ip, args.login, args.password)
 
 	# start render
 	p = psutil.Popen(render_bat_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -174,7 +177,7 @@ def main():
 	# update render status
 	logger.info("Finished rendering scene: {}".format(max_scene))
 	post_data = {'status': 'Completed', 'id': args.id}
-	send_status(post_data, args.django_ip)
+	send_status(post_data, args.django_ip, args.login, args.password)
 
 	# send render info
 	logger.info("Sending render info")
@@ -184,7 +187,7 @@ def main():
 
 		post_data = {'render_time': data['render_time'], 'width': data['width'], 'height': data['height'], 'min_samples': data['min_samples'], \
 			'max_samples': data['max_samples'], 'noise_threshold': data['noise_threshold'], 'id': args.id, 'status':'render_info'}
-		send_status(post_data, args.django_ip)
+		send_status(post_data, args.django_ip, args.login, args.password)
 	else:
 		logger.info("Error. No render info!")
 
@@ -225,7 +228,7 @@ def main():
 
 	logger.info("Sending results")
 	post_data = {'status': status, 'fail_reason': fail_reason, 'id': args.id, 'build_number': args.build_number}
-	send_results(post_data, files, args.django_ip)
+	send_results(post_data, files, args.django_ip, args.login, args.password)
 
 	return rc
 
