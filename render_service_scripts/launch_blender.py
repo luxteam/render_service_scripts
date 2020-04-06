@@ -89,6 +89,7 @@ def main():
 	parser.add_argument('--scene_name', required=True)
 	parser.add_argument('--login', required=True)
 	parser.add_argument('--password', required=True)
+	parser.add_argument('--timeout', required=True)
 	args = parser.parse_args()
 
 	# create output folder for images and logs
@@ -146,7 +147,7 @@ def main():
 	
 	# catch timeout ~30 minutes
 	rc = 0
-	timeout = 2000
+	timeout = float(args.timeout)
 	start_time = datetime.datetime.now()
 	rendered = 0
 	with open(os.path.join('Output', "render_log.txt"), 'w', encoding='utf-8') as file:
