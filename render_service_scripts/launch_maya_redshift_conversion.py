@@ -252,8 +252,7 @@ def main():
 	error_window = None
 	while True:
 		try:
-			timeout_in_minutes = math.ceil(float(args.timeout) / 60) 
-			stdout, stderr = p.communicate(timeout=timeout_in_minutes)
+			stdout, stderr = p.communicate(timeout=float(args.timeout))
 		except (subprocess.TimeoutExpired, psutil.TimeoutExpired) as err:
 			fatal_errors_titles = ['maya', 'Student Version File', 'Radeon ProRender Error', 'Script Editor', 'File contains mental ray nodes']
 			error_window = set(fatal_errors_titles).intersection(get_windows_titles())
@@ -310,9 +309,12 @@ def main():
 			rc = -1
 			logger.info("crash window - {}".format(list(error_window)[0]))
 			fail_reason = "crash window - {}".format(list(error_window)[0])
-		elif rc == -3:
+		elif rc == -2:
 			logger.info("Fail reason: rpr timeout expired")
 			fail_reason = "RPR timeout expired"
+		elif rc == -3:
+			logger.info("Fail reason: redshift timeout expired")
+			fail_reason = "Redshift timeout expired"
 		elif len(images) < 2:
 			rc = -1
 			logger.info("Fail reason: rendering failed, no output image")
