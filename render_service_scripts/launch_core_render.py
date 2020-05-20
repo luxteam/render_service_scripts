@@ -147,7 +147,7 @@ def main():
 	unpack_scene(args.sceneName)
 	scenes = getScenes(current_path)
 
-	timeout = float(args.timeout) / len(scenes)
+	timeout = int(args.timeout) / len(scenes)
 	render_time = 0
 
 	if startFrame == 1 and endFrame == 1:

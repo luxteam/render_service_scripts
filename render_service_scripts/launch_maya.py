@@ -9,7 +9,6 @@ import os
 import logging
 import datetime
 import threading
-import math
 from time import sleep
 from file_read_backwards import FileReadBackwards
 from render_service_scripts.unpack import unpack_scene
@@ -233,7 +232,7 @@ def main():
 	error_window = None
 	while True:
 		try:
-			stdout, stderr = p.communicate(timeout=float(args.timeout))
+			stdout, stderr = p.communicate(timeout=int(args.timeout))
 		except (subprocess.TimeoutExpired, psutil.TimeoutExpired) as err:
 			fatal_errors_titles = ['maya', 'Student Version File', 'Radeon ProRender Error', 'Script Editor', 'File contains mental ray nodes']
 			error_window = set(fatal_errors_titles).intersection(get_windows_titles())

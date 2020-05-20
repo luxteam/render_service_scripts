@@ -154,7 +154,7 @@ def main():
 	error_window = None
 	while True:
 		try:
-			stdout, stderr = p.communicate(timeout=float(args.timeout))
+			stdout, stderr = p.communicate(timeout=int(args.timeout))
 		except (subprocess.TimeoutExpired, psutil.TimeoutExpired) as err:
 			fatal_errors_titles = ['Radeon ProRender', 'AMD Radeon ProRender debug assert', os.getcwd() + ' - MAXScript',\
 			'3ds Max', 'Microsoft Visual C++ Runtime Library', \

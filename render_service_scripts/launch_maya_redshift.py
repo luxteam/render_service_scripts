@@ -177,7 +177,7 @@ def main():
 	# catch timeout ~30 minutes
 	rc = 0
 	try:
-		stdout, stderr = p.communicate(timeout=float(args.timeout))
+		stdout, stderr = p.communicate(timeout=int(args.timeout))
 	except (subprocess.TimeoutExpired, psutil.TimeoutExpired) as err:
 		rc = -1
 		for child in reversed(p.children(recursive=True)):

@@ -9,7 +9,6 @@ import glob
 import os
 import logging
 import ctypes
-import math
 from render_service_scripts.unpack import unpack_scene
 from requests.auth import HTTPBasicAuth
 
@@ -193,7 +192,7 @@ def main():
 	# catch timeout ~30 minutes
 	rc = 0
 	try:
-		stdout, stderr = p.communicate(timeout=float(args.timeout))
+		stdout, stderr = p.communicate(timeout=int(args.timeout))
 	except (subprocess.TimeoutExpired, psutil.TimeoutExpired) as err:
 		rc = -3
 		for child in reversed(p.children(recursive=True)):
@@ -252,7 +251,7 @@ def main():
 	error_window = None
 	while True:
 		try:
-			stdout, stderr = p.communicate(timeout=float(args.timeout))
+			stdout, stderr = p.communicate(timeout=int(args.timeout))
 		except (subprocess.TimeoutExpired, psutil.TimeoutExpired) as err:
 			fatal_errors_titles = ['maya', 'Student Version File', 'Radeon ProRender Error', 'Script Editor', 'File contains mental ray nodes']
 			error_window = set(fatal_errors_titles).intersection(get_windows_titles())

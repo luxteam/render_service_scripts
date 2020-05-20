@@ -147,7 +147,7 @@ def main():
 	
 	# catch timeout ~30 minutes
 	rc = 0
-	timeout = float(args.timeout)
+	timeout = int(args.timeout)
 	start_time = datetime.datetime.now()
 	rendered = 0
 	with open(os.path.join('Output', "render_log.txt"), 'w', encoding='utf-8') as file:
