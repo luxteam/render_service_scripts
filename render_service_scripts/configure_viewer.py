@@ -13,20 +13,43 @@ logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def build_viewer_pack(version, filename):
+def send_status(post_data, django_ip, login, password):	
+	try_count = 0
+	while try_count < 3:
+		try:
+			response = requests.post(django_ip, data=post_data, auth=HTTPBasicAuth(login, password))
+			if response.status_code  == 200:
+				logger.info("POST request successfuly sent.")
+				break
+			else:
+				logger.info("POST reques failed, status code: " + str(response.status_code))
+				break
+		except Exception as e:
+			if try_count == 2:
+				logger.info("POST request try 3 failed. Finishing work.")
+				break
+			try_count += 1
+			logger.info("POST request failed. Retry ...")
+
+
+def build_viewer_pack(version, filename, id):
 		try:
 			zip_name = "RPRViewerPack_{}_{}".format(version, filename)	
 			shutil.make_archive(zip_name, 'zip', 'viewer_dir')
 		except Exception as ex:
-			logger.error("Zip package build failed.")
+			fail_reason = "Zip package build failed"
+			logger.error(fail_reason)
 			logger.error(str(ex))
 			logger.error(traceback.format_exc())	
-			exit(1)
+			post_data = {'status': 'Failure', 'fail_reason': fail_reason, 'id': id}
+			send_status(post_data, files, args.django_ip, args.login, args.password)
+			exit(-1)
 
 
 def main():
 
 	parser = argparse.ArgumentParser()
+	parser.add_argument('--id')
 	parser.add_argument('--scene_name')
 	parser.add_argument('--version')
 	parser.add_argument('--width')
@@ -51,8 +74,11 @@ def main():
 	if gltf_file:
 		logger.info("Found scene: " + gltf_file)
 	else:
-		logger.error("No scene in the package!")
-		exit(1)
+		fail_reason = "No scene in the package"
+		logger.error(fail_reason)
+		post_data = {'status': 'Failure', 'fail_reason': fail_reason, 'id': args.id}
+		send_status(post_data, files, args.django_ip, args.login, args.password)
+		exit(-1)
 
 	# set default
 	if ui_config:
@@ -68,12 +94,15 @@ def main():
 				config = json.loads(f.read())
 			logger.info("Config file was read successfuly.")
 		except Exception as ex:
-			logger.error("Config file in corructed.")
+			logger.error("Config file in corrupted.")
 			logger.error(str(ex))
 			logger.error(traceback.format_exc())	
 	else:
-		logger.error("Config file in corructed.")
-		exit(1)
+		fail_reason = "Config file in corrupted"
+		logger.error(fail_reason)
+		post_data = {'status': 'Failure', 'fail_reason': fail_reason, 'id': args.id}
+		send_status(post_data, files, args.django_ip, args.login, args.password)
+		exit(-1)
 
 	config['scene']['path'] = gltf_file
 	config['screen']['width'] = int(args.width)
@@ -100,7 +129,7 @@ def main():
 			repeat_launch = True
 
 	if not repeat_launch:
-		build_viewer_pack(args.version, filename)
+		build_viewer_pack(args.version, filename, args.id)
 
 	config['save_frames'] = True
 	config['iterations_per_frame'] = int(args.iterations)
@@ -145,8 +174,11 @@ def main():
 			logger.info("Testing was finished successfuly.")
 
 	else:
-		logger.error("Failed! No exe file in package.")
-		exit(1)
+		fail_reason = "No exe file in package"
+		logger.error(fail_reason)
+		post_data = {'status': 'Failure', 'fail_reason': fail_reason, 'id': args.id}
+		send_status(post_data, files, args.django_ip, args.login, args.password)
+		exit(-1)
 
 	#return to workdir
 	os.chdir('..')
@@ -164,4 +196,6 @@ if __name__ == "__main__":
 			logger.error(traceback.format_exc())
 			try_count += 1
 			if try_count == 3:
-				exit(1)
+				post_data = {'status': 'Failure', 'fail_reason': str(ex), 'id': args.id}
+				send_status(post_data, files, args.django_ip, args.login, args.password)
+				exit(-1)
