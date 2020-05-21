@@ -7,6 +7,8 @@ import logging
 import traceback
 from render_service_scripts.unpack import unpack_all
 import shutil
+import requests
+from requests.auth import HTTPBasicAuth
 
 # logging
 logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO)
@@ -32,7 +34,7 @@ def send_status(post_data, django_ip, login, password):
 			logger.info("POST request failed. Retry ...")
 
 
-def build_viewer_pack(version, filename, id):
+def build_viewer_pack(version, filename, args):
 		try:
 			zip_name = "RPRViewerPack_{}_{}".format(version, filename)	
 			shutil.make_archive(zip_name, 'zip', 'viewer_dir')
@@ -41,8 +43,8 @@ def build_viewer_pack(version, filename, id):
 			logger.error(fail_reason)
 			logger.error(str(ex))
 			logger.error(traceback.format_exc())	
-			post_data = {'status': 'Failure', 'fail_reason': fail_reason, 'id': id}
-			send_status(post_data, files, args.django_ip, args.login, args.password)
+			post_data = {'status': 'Failure', 'fail_reason': fail_reason, 'id': args.id, 'build_number': args.build_number}
+			send_status(post_data, args.django_ip, args.login, args.password)
 			exit(-1)
 
 
@@ -63,8 +65,8 @@ def main(args):
 	else:
 		fail_reason = "No scene in the package"
 		logger.error(fail_reason)
-		post_data = {'status': 'Failure', 'fail_reason': fail_reason, 'id': args.id}
-		send_status(post_data, files, args.django_ip, args.login, args.password)
+		post_data = {'status': 'Failure', 'fail_reason': fail_reason, 'id': args.id, 'build_number': args.build_number}
+		send_status(post_data, args.django_ip, args.login, args.password)
 		exit(-1)
 
 	# set default
@@ -87,8 +89,8 @@ def main(args):
 	else:
 		fail_reason = "Config file in corrupted"
 		logger.error(fail_reason)
-		post_data = {'status': 'Failure', 'fail_reason': fail_reason, 'id': args.id}
-		send_status(post_data, files, args.django_ip, args.login, args.password)
+		post_data = {'status': 'Failure', 'fail_reason': fail_reason, 'id': args.id, 'build_number': args.build_number}
+		send_status(post_data, args.django_ip, args.login, args.password)
 		exit(-1)
 
 	config['scene']['path'] = gltf_file
@@ -116,7 +118,7 @@ def main(args):
 			repeat_launch = True
 
 	if not repeat_launch:
-		build_viewer_pack(args.version, filename, args.id)
+		build_viewer_pack(args.version, filename, args)
 
 	config['save_frames'] = True
 	config['iterations_per_frame'] = int(args.iterations)
@@ -163,8 +165,8 @@ def main(args):
 	else:
 		fail_reason = "No exe file in package"
 		logger.error(fail_reason)
-		post_data = {'status': 'Failure', 'fail_reason': fail_reason, 'id': args.id}
-		send_status(post_data, files, args.django_ip, args.login, args.password)
+		post_data = {'status': 'Failure', 'fail_reason': fail_reason, 'id': args.id, 'build_number': args.build_number}
+		send_status(post_data, args.django_ip, args.login, args.password)
 		exit(-1)
 
 	#return to workdir
@@ -173,6 +175,8 @@ def main(args):
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--id')
+	parser.add_argument('--django_ip')
+	parser.add_argument('--build_number')
 	parser.add_argument('--scene_name')
 	parser.add_argument('--version')
 	parser.add_argument('--width')
@@ -195,6 +199,6 @@ if __name__ == "__main__":
 			logger.error(traceback.format_exc())
 			try_count += 1
 			if try_count == 3:
-				post_data = {'status': 'Failure', 'fail_reason': str(ex), 'id': args.id}
-				send_status(post_data, files, args.django_ip, args.login, args.password)
+				post_data = {'status': 'Failure', 'fail_reason': str(ex), 'id': args.id, 'build_number': args.build_number}
+				send_status(post_data, args.django_ip, args.login, args.password)
 				exit(-1)
