@@ -46,20 +46,7 @@ def build_viewer_pack(version, filename, id):
 			exit(-1)
 
 
-def main():
-
-	parser = argparse.ArgumentParser()
-	parser.add_argument('--id')
-	parser.add_argument('--scene_name')
-	parser.add_argument('--version')
-	parser.add_argument('--width')
-	parser.add_argument('--height')
-	parser.add_argument('--engine')
-	parser.add_argument('--iterations')
-	parser.add_argument('--login')
-	parser.add_argument('--password')
-	args = parser.parse_args()
-
+def main(args):
 	# find GLTF scene and UIConfig
 	gltf_file = ""
 	ui_config = ""
@@ -184,12 +171,24 @@ def main():
 	os.chdir('..')
 	
 if __name__ == "__main__":
+	parser = argparse.ArgumentParser()
+	parser.add_argument('--id')
+	parser.add_argument('--scene_name')
+	parser.add_argument('--version')
+	parser.add_argument('--width')
+	parser.add_argument('--height')
+	parser.add_argument('--engine')
+	parser.add_argument('--iterations')
+	parser.add_argument('--login')
+	parser.add_argument('--password')
+	args = parser.parse_args()
+
 	try_count = 0
 	# unpack all archives
 	unpack_all(os.path.join('.', 'viewer_dir'), delete=True, output_dir=os.path.join('.', 'viewer_dir'))
 	while try_count < 3:
 		try:
-			main()
+			main(args)
 			exit(0)
 		except Exception as ex:
 			logger.error(str(ex))
