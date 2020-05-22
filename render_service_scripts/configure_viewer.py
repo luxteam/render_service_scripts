@@ -185,6 +185,7 @@ if __name__ == "__main__":
 	parser.add_argument('--iterations')
 	parser.add_argument('--login')
 	parser.add_argument('--password')
+	parser.add_argument('--timeout')
 	args = parser.parse_args()
 
 	try_count = 0
