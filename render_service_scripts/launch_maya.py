@@ -148,6 +148,7 @@ def main():
 	parser.add_argument('--batchRender', required=True)
 	parser.add_argument('--login', required=True)
 	parser.add_argument('--password', required=True)
+	parser.add_argument('--timeout', required=True)
 	args = parser.parse_args()
 
 	# create output folder for images and logs
@@ -228,13 +229,11 @@ def main():
 
 	# catch timeout ~30 minutes
 	rc = 0
-	total_timeout = 70 # ~35 minutes
 	error_window = None
 	while True:
 		try:
-			stdout, stderr = p.communicate(timeout=30)
+			stdout, stderr = p.communicate(timeout=int(args.timeout))
 		except (subprocess.TimeoutExpired, psutil.TimeoutExpired) as err:
-			total_timeout -= 1
 			fatal_errors_titles = ['maya', 'Student Version File', 'Radeon ProRender Error', 'Script Editor', 'File contains mental ray nodes']
 			error_window = set(fatal_errors_titles).intersection(get_windows_titles())
 			if error_window:
@@ -243,7 +242,7 @@ def main():
 					child.terminate()
 				p.terminate()
 				break
-			elif not total_timeout:
+			else:
 				rc = -2
 				break
 		else:

@@ -135,7 +135,7 @@ def main(args):
 	if os.path.isfile('RadeonProViewer.exe'):
 		p = psutil.Popen('RadeonProViewer.exe', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		try:
-			stdout, stderr = p.communicate(timeout=300)
+			stdout, stderr = p.communicate(timeout=int(args.timeout))
 		except (subprocess.TimeoutExpired, psutil.TimeoutExpired) as err:
 			try:
 				for child in reversed(p.children(recursive=True)):
