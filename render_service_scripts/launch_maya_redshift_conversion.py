@@ -220,7 +220,7 @@ def main():
 	with open("conversion_rpr_render.py") as f:
 		rpr_script_template = f.read()
 	
-	rpr_script = rpr_script_template.format(res_path=current_path_for_maya, scene_path=maya_scene, project=project)
+	rpr_script = rpr_script_template.format(converter_module="convertRS2RPR", res_path=current_path_for_maya, scene_path=maya_scene, project=project)
 
 	# save render py file
 	render_rpr_file = "render_rpr_{}.py".format(filename) 
@@ -246,7 +246,6 @@ def main():
 	# start render
 	p = psutil.Popen(render_bat_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-	# catch timeout ~30 minutes
 	rc = 0
 	error_window = None
 	while True:

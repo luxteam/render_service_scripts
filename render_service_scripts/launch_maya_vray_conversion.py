@@ -160,7 +160,7 @@ def main():
 		set MAYA_CMD_FILE_OUTPUT=%cd%/Output/maya_vray_render_log.txt
 		set MAYA_SCRIPT_PATH=%cd%;%MAYA_SCRIPT_PATH%
 		set PYTHONPATH=%cd%;%PYTHONPATH%
-		"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -r vray -preRender "python(\\"import {vray_render_file} as render\\"); python(\\"render.main()\\");" -log "Output\\batch_vray_render_log.txt" -of jpg {maya_scene}
+		"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -r vray -preRender "python(\\"import {vray_render_file} as render\\"); python(\\"render.main()\\");" -log "Output\\batch_vray_render_log.txt" -rd "Output" -of jpg {maya_scene}
 		'''.format(tool=args.tool, maya_scene=maya_scene, vray_render_file=vray_render_file.split('.')[0])
 	render_bat_file = "launch_vray_render_{}.bat".format(filename)
 	with open(render_bat_file, 'w') as f:
@@ -206,7 +206,7 @@ def main():
 	with open("conversion_rpr_render.py") as f:
 		rpr_script_template = f.read()
 	
-	rpr_script = rpr_script_template.format(res_path=current_path_for_maya, scene_path=maya_scene, project=project)
+	rpr_script = rpr_script_template.format(converter_module="convertVR2RPR", res_path=current_path_for_maya, scene_path=maya_scene, project=project)
 
 	# save render py file
 	render_rpr_file = "render_rpr_{}.py".format(filename) 
@@ -217,7 +217,7 @@ def main():
 	cmd_command = '''
 		set MAYA_CMD_FILE_OUTPUT=%cd%/Output/rpr_render_log.txt
 		set MAYA_SCRIPT_PATH=%cd%;%MAYA_SCRIPT_PATH%
-		set PYTHONPATH=%cd%;%cd%/RS2RPRConvertTool;%PYTHONPATH%
+		set PYTHONPATH=%cd%;%cd%/Vray2RPRConvertTool;%PYTHONPATH%
 		"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Maya.exe" -command "python(\\"import {render_rpr_file} as render\\"); python(\\"render.main()\\");" 
 		'''.format(tool=args.tool, render_rpr_file=render_rpr_file.split('.')[0])
 	render_bat_file = "launch_rpr_render_{}.bat".format(filename)
@@ -232,15 +232,12 @@ def main():
 	# start render
 	p = psutil.Popen(render_bat_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-	# catch timeout ~30 minutes
 	rc = 0
-	total_timeout = 70 # ~35 minutes
 	error_window = None
 	while True:
 		try:
 			stdout, stderr = p.communicate(timeout=int(args.timeout))
 		except (subprocess.TimeoutExpired, psutil.TimeoutExpired) as err:
-			total_timeout -= 1
 			fatal_errors_titles = ['maya', 'Student Version File', 'Radeon ProRender Error', 'Script Editor', 'File contains mental ray nodes']
 			error_window = set(fatal_errors_titles).intersection(get_windows_titles())
 			if error_window:
@@ -249,7 +246,7 @@ def main():
 					child.terminate()
 				p.terminate()
 				break
-			elif not total_timeout:
+			else:
 				rc = -2
 				break
 		else:
