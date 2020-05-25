@@ -129,6 +129,7 @@ def main():
 	parser.add_argument('--scene_name', required=True)
 	parser.add_argument('--login', required=True)
 	parser.add_argument('--password', required=True)
+	parser.add_argument('--timeout', required=True)
 	args = parser.parse_args()
 
 	# create output folder for images and logs
@@ -191,7 +192,7 @@ def main():
 	# catch timeout ~30 minutes
 	rc = 0
 	try:
-		stdout, stderr = p.communicate(timeout=2000)
+		stdout, stderr = p.communicate(timeout=int(args.timeout))
 	except (subprocess.TimeoutExpired, psutil.TimeoutExpired) as err:
 		rc = -3
 		for child in reversed(p.children(recursive=True)):
@@ -247,13 +248,11 @@ def main():
 
 	# catch timeout ~30 minutes
 	rc = 0
-	total_timeout = 70 # ~35 minutes
 	error_window = None
 	while True:
 		try:
-			stdout, stderr = p.communicate(timeout=30)
+			stdout, stderr = p.communicate(timeout=int(args.timeout))
 		except (subprocess.TimeoutExpired, psutil.TimeoutExpired) as err:
-			total_timeout -= 1
 			fatal_errors_titles = ['maya', 'Student Version File', 'Radeon ProRender Error', 'Script Editor', 'File contains mental ray nodes']
 			error_window = set(fatal_errors_titles).intersection(get_windows_titles())
 			if error_window:
@@ -262,7 +261,7 @@ def main():
 					child.terminate()
 				p.terminate()
 				break
-			elif not total_timeout:
+			else:
 				rc = -2
 				break
 		else:
@@ -309,9 +308,12 @@ def main():
 			rc = -1
 			logger.info("crash window - {}".format(list(error_window)[0]))
 			fail_reason = "crash window - {}".format(list(error_window)[0])
-		elif rc == -3:
+		elif rc == -2:
 			logger.info("Fail reason: rpr timeout expired")
 			fail_reason = "RPR timeout expired"
+		elif rc == -3:
+			logger.info("Fail reason: redshift timeout expired")
+			fail_reason = "Redshift timeout expired"
 		elif len(images) < 2:
 			rc = -1
 			logger.info("Fail reason: rendering failed, no output image")

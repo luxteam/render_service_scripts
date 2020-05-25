@@ -132,6 +132,7 @@ def main():
 	parser.add_argument('--gpu', required=True)
 	parser.add_argument('--login', required=True)
 	parser.add_argument('--password', required=True)
+	parser.add_argument('--timeout', required=True)
 
 	args = parser.parse_args()
 
@@ -146,7 +147,7 @@ def main():
 	unpack_scene(args.sceneName)
 	scenes = getScenes(current_path)
 
-	timeout = 3600 / len(scenes)
+	timeout = int(args.timeout) / len(scenes)
 	render_time = 0
 
 	if startFrame == 1 and endFrame == 1:
