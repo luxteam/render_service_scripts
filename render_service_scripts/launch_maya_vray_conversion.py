@@ -82,6 +82,15 @@ def send_results(post_data, files, django_ip, login, password):
 			logger.info("POST request failed. Retry ...")
 
 
+def get_vr_render_time(log_name):
+	with open(log_name, 'r') as file:
+		for line in file.readlines():
+			if "V-Ray: Total frame time" in line:
+				time_s = float(line.split("(")[-1].replace(' s)', ''))
+
+				return time_s
+
+
 def get_windows_titles():
 	EnumWindows = ctypes.windll.user32.EnumWindows
 	EnumWindowsProc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
@@ -194,9 +203,8 @@ def main():
 	logger.info("Sending render info")
 	vray_render_time = 0
 	try:
-		# TODO get vray render time
-		vray_render_time = 0
-		post_data = {'vray_render_time': vray_render_time, 'id': args.id, 'status':'vray_render_info'}
+		vray_render_time = round(get_vr_render_time(os.path.join("Output", "batch_vray_render_log.txt")), 2)
+		post_data = {'original_render_time': vray_render_time, 'id': args.id, 'status':'original_render_info'}
 		send_status(post_data, args.django_ip, args.login, args.password)
 	except:
 		logger.info("Error. No render time!")

@@ -210,7 +210,7 @@ def main():
 	redshift_render_time = 0
 	try:
 		redshift_render_time = round(get_rs_render_time(os.path.join("Output", "batch_redshift_render_log.txt")), 2)
-		post_data = {'redshift_render_time': redshift_render_time, 'id': args.id, 'status':'redshift_render_info'}
+		post_data = {'original_render_time': redshift_render_time, 'id': args.id, 'status':'original_render_info'}
 		send_status(post_data, args.django_ip, args.login, args.password)
 	except:
 		logger.info("Error. No render time!")
