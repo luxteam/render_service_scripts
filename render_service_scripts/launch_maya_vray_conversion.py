@@ -169,7 +169,7 @@ def main():
 		set MAYA_CMD_FILE_OUTPUT=%cd%/Output/maya_vray_render_log.txt
 		set MAYA_SCRIPT_PATH=%cd%;%MAYA_SCRIPT_PATH%
 		set PYTHONPATH=%cd%;%PYTHONPATH%
-		"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -r vray -preRender "python(\\"import {vray_render_file} as render\\"); python(\\"render.main()\\");" -log "Output\\batch_vray_render_log.txt" -rd "Output" -of jpg {maya_scene}
+		"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -r vray -preRender "python(\\"import {vray_render_file} as render\\"); python(\\"render.main()\\");" -log "Output\\batch_vray_render_log.txt" -of jpg {maya_scene}
 		'''.format(tool=args.tool, maya_scene=maya_scene, vray_render_file=vray_render_file.split('.')[0])
 	render_bat_file = "launch_vray_render_{}.bat".format(filename)
 	with open(render_bat_file, 'w') as f:
@@ -183,7 +183,6 @@ def main():
 	# start render
 	p = psutil.Popen(render_bat_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-	# catch timeout ~30 minutes
 	rc = 0
 	try:
 		stdout, stderr = p.communicate(timeout=int(args.timeout))
@@ -281,13 +280,17 @@ def main():
 	output_files = os.listdir('Output')
 	for output_file in output_files:
 		files.update({output_file: open(os.path.join('Output', output_file), 'rb')})
+	output_files = [output_file for output_file in os.listdir('images') if os.path.isfile(os.path.join('images', output_file))]
+	for output_file in output_files:
+		if output_file.endswith('.jpg'):
+			files.update({output_file: open(os.path.join('images', output_file), 'rb')})
 	logger.info("Output files: {}".format(files))
 
 	# detect render status
 	status = "Unknown"
 	fail_reason = "Unknown"
 
-	images = glob.glob(os.path.join('Output' ,'*.jpg'))
+	images = glob.glob(os.path.join('Output' ,'*.jpg')) + glob.glob(os.path.join('images','*.jpg'))
 	if rc == 0 and len(images) > 1:
 		logger.info("Render status: success")
 		status = "Success"

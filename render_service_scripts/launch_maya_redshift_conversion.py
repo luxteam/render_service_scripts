@@ -189,7 +189,6 @@ def main():
 	# start render
 	p = psutil.Popen(render_bat_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-	# catch timeout ~30 minutes
 	rc = 0
 	try:
 		stdout, stderr = p.communicate(timeout=int(args.timeout))
