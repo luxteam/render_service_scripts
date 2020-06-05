@@ -43,7 +43,7 @@ def build_viewer_pack(version, filename, args):
 			logger.error(fail_reason)
 			logger.error(str(ex))
 			logger.error(traceback.format_exc())	
-			post_data = {'status': 'Failure', 'fail_reason': fail_reason, 'id': args.id, 'build_number': args.build_number}
+			post_data = {'status': 'Failure', 'fail_reason': fail_reason, 'id': args.id}
 			send_status(post_data, args.django_ip, args.login, args.password)
 			exit(-1)
 
@@ -65,7 +65,7 @@ def main(args):
 	else:
 		fail_reason = "No scene in the package"
 		logger.error(fail_reason)
-		post_data = {'status': 'Failure', 'fail_reason': fail_reason, 'id': args.id, 'build_number': args.build_number}
+		post_data = {'status': 'Failure', 'fail_reason': fail_reason, 'id': args.id}
 		send_status(post_data, args.django_ip, args.login, args.password)
 		exit(-1)
 
@@ -89,7 +89,7 @@ def main(args):
 	else:
 		fail_reason = "Config file in corrupted"
 		logger.error(fail_reason)
-		post_data = {'status': 'Failure', 'fail_reason': fail_reason, 'id': args.id, 'build_number': args.build_number}
+		post_data = {'status': 'Failure', 'fail_reason': fail_reason, 'id': args.id}
 		send_status(post_data, args.django_ip, args.login, args.password)
 		exit(-1)
 
@@ -165,7 +165,7 @@ def main(args):
 	else:
 		fail_reason = "No exe file in package"
 		logger.error(fail_reason)
-		post_data = {'status': 'Failure', 'fail_reason': fail_reason, 'id': args.id, 'build_number': args.build_number}
+		post_data = {'status': 'Failure', 'fail_reason': fail_reason, 'id': args.id}
 		send_status(post_data, args.django_ip, args.login, args.password)
 		exit(-1)
 
@@ -176,7 +176,6 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--id')
 	parser.add_argument('--django_ip')
-	parser.add_argument('--build_number')
 	parser.add_argument('--scene_name')
 	parser.add_argument('--version')
 	parser.add_argument('--width')
@@ -200,6 +199,6 @@ if __name__ == "__main__":
 			logger.error(traceback.format_exc())
 			try_count += 1
 			if try_count == 3:
-				post_data = {'status': 'Failure', 'fail_reason': str(ex), 'id': args.id, 'build_number': args.build_number}
+				post_data = {'status': 'Failure', 'fail_reason': str(ex), 'id': args.id}
 				send_status(post_data, args.django_ip, args.login, args.password)
 				exit(-1)

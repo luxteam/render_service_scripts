@@ -124,7 +124,6 @@ def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--django_ip', required=True)
 	parser.add_argument('--id', required=True)
-	parser.add_argument('--build_number', required=True)
 	parser.add_argument('--tool', required=True)
 	parser.add_argument('--scene_name', required=True)
 	parser.add_argument('--login', required=True)
@@ -322,7 +321,7 @@ def main():
 			fail_reason = "Unknown"
 
 	logger.info("Sending results")
-	post_data = {'status': status, 'fail_reason': fail_reason, 'id': args.id, 'build_number': args.build_number}
+	post_data = {'status': status, 'fail_reason': fail_reason, 'id': args.id}
 	send_results(post_data, files, args.django_ip, args.login, args.password)
 
 	return rc
