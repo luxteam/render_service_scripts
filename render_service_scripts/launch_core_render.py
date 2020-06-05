@@ -332,6 +332,8 @@ def main():
 	post_data = {'status': status, 'fail_reason': fail_reason, 'id': args.id, 'build_number': args.build_number}
 	send_results(post_data, files, args.django_ip, args.login, args.password)
 
+	return rc
+
 if __name__ == "__main__":
 	rc = main()
 	exit(rc)
