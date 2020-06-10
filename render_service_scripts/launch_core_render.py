@@ -122,7 +122,6 @@ def main():
 
 	parser.add_argument('--django_ip', required=True)
 	parser.add_argument('--id', required=True)
-	parser.add_argument('--build_number', required=True)
 	parser.add_argument('--pass_limit', required=True)
 	parser.add_argument('--width', required=True)
 	parser.add_argument('--height', required=True)
@@ -329,7 +328,7 @@ def main():
 	send_status(post_data, args.django_ip, args.login, args.password)
 
 	logger.info("Sending results")
-	post_data = {'status': status, 'fail_reason': fail_reason, 'id': args.id, 'build_number': args.build_number}
+	post_data = {'status': status, 'fail_reason': fail_reason, 'id': args.id}
 	send_results(post_data, files, args.django_ip, args.login, args.password)
 
 	return rc

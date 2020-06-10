@@ -1,4 +1,4 @@
-import convertRS2RPR
+import importlib
 import os
 import maya.cmds as cmds
 import maya.mel as mel
@@ -61,12 +61,14 @@ def rpr_render():
 
 	
 def main():
-
+	# import auto_launch function from converter module
+	converter_module = importlib.import_module("{converter_module}")
+	converter_auto_launcher = getattr(converter_module, "auto_launch")
 	initializeRPR()
 	mel.eval("setProject(\"{project}\")")
 	cmds.file("{scene_path}", f=True, options="v=0;", ignoreVersion=True, o=True)
 	resolveFilePath()
-	convertRS2RPR.auto_launch()
+	converter_auto_launcher()
 	
 	try:
 		log_path = cmds.file(q=True, sn=True, shn=True) + ".log"

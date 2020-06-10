@@ -82,19 +82,13 @@ def send_results(post_data, files, django_ip, login, password):
 			logger.info("POST request failed. Retry ...")
 
 
-def get_rs_render_time(log_name):
+def get_vr_render_time(log_name):
 	with open(log_name, 'r') as file:
 		for line in file.readlines():
-			if "[Redshift] Rendering done - total time for 1 frames:" in line:
-				time_s = line.split(": ")[-1]
+			if "V-Ray: Total frame time" in line:
+				time_s = float(line.split("(")[-1].replace(' s)', ''))
 
-				try:
-					x = datetime.datetime.strptime(time_s.replace('\n', '').replace('\r', ''), '%S.%fs')
-				except ValueError:
-					x = datetime.datetime.strptime(time_s.replace('\n', '').replace('\r', ''), '%Mm:%Ss')
-				# 	TODO: proceed H:M:S
-
-				return float(x.second + x.minute * 60 + float(x.microsecond / 1000000))
+				return time_s
 
 
 def get_windows_titles():
@@ -156,33 +150,33 @@ def main():
 		project = current_path_for_maya
 
 	# read maya template
-	with open("conversion_redshift_render.py") as f:
-		redshift_script_template = f.read()
+	with open("conversion_vray_render.py") as f:
+		vray_script_template = f.read()
 
-	redshift_script = redshift_script_template.format(res_path=current_path_for_maya, scene_path=maya_scene, project=project)
+	vray_script = vray_script_template.format(res_path=current_path_for_maya, scene_path=maya_scene, project=project)
 
 	# scene name
 	filename = os.path.basename(maya_scene).split(".")[0]
 
 	# save render py file
-	redshift_render_file = "render_redshift_{}.py".format(filename) 
-	with open(redshift_render_file, 'w') as f:
-		f.write(redshift_script)
+	vray_render_file = "render_vray_{}.py".format(filename) 
+	with open(vray_render_file, 'w') as f:
+		f.write(vray_script)
 
-	# Redshift batch render
+	# Vray batch render
 	cmd_command = '''
-		set MAYA_CMD_FILE_OUTPUT=%cd%/Output/maya_redshift_render_log.txt
+		set MAYA_CMD_FILE_OUTPUT=%cd%/Output/maya_vray_render_log.txt
 		set MAYA_SCRIPT_PATH=%cd%;%MAYA_SCRIPT_PATH%
 		set PYTHONPATH=%cd%;%PYTHONPATH%
-		"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -r redshift -preRender "python(\\"import {redshift_render_file} as render\\"); python(\\"render.main()\\");" -log "Output\\batch_redshift_render_log.txt" -of jpg {maya_scene}
-		'''.format(tool=args.tool, maya_scene=maya_scene, redshift_render_file=redshift_render_file.split('.')[0])
-	render_bat_file = "launch_redshift_render_{}.bat".format(filename)
+		"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Render.exe" -r vray -preRender "python(\\"import {vray_render_file} as render\\"); python(\\"render.main()\\");" -log "Output\\batch_vray_render_log.txt" -of jpg {maya_scene}
+		'''.format(tool=args.tool, maya_scene=maya_scene, vray_render_file=vray_render_file.split('.')[0])
+	render_bat_file = "launch_vray_render_{}.bat".format(filename)
 	with open(render_bat_file, 'w') as f:
 		f.write(cmd_command)		
 
 	# starting rendering
-	logger.info("Starting rendering redshift scene: {}".format(maya_scene))
-	post_data = {'status': 'Rendering redshift', 'id': args.id}
+	logger.info("Starting rendering vray scene: {}".format(maya_scene))
+	post_data = {'status': 'Rendering vray', 'id': args.id}
 	send_status(post_data, args.django_ip, args.login, args.password)	
 
 	# start render
@@ -198,17 +192,17 @@ def main():
 		p.terminate()
 
 	# update render status
-	logger.info("Finished rendering redshift scene: {}".format(maya_scene))
-	logger.info("Starting converting redshift scene: {}".format(maya_scene))
-	post_data = {'status': 'Converting redshift', 'id': args.id}
+	logger.info("Finished rendering vray scene: {}".format(maya_scene))
+	logger.info("Starting converting vray scene: {}".format(maya_scene))
+	post_data = {'status': 'Converting vray', 'id': args.id}
 	send_status(post_data, args.django_ip, args.login, args.password)
 
 	# send render info
 	logger.info("Sending render info")
-	redshift_render_time = 0
+	vray_render_time = 0
 	try:
-		redshift_render_time = round(get_rs_render_time(os.path.join("Output", "batch_redshift_render_log.txt")), 2)
-		post_data = {'original_render_time': redshift_render_time, 'id': args.id, 'status':'original_render_info'}
+		vray_render_time = round(get_vr_render_time(os.path.join("Output", "batch_vray_render_log.txt")), 2)
+		post_data = {'original_render_time': vray_render_time, 'id': args.id, 'status':'original_render_info'}
 		send_status(post_data, args.django_ip, args.login, args.password)
 	except:
 		logger.info("Error. No render time!")
@@ -218,7 +212,7 @@ def main():
 	with open("conversion_rpr_render.py") as f:
 		rpr_script_template = f.read()
 	
-	rpr_script = rpr_script_template.format(converter_module="convertRS2RPR", res_path=current_path_for_maya, scene_path=maya_scene, project=project)
+	rpr_script = rpr_script_template.format(converter_module="convertVR2RPR", res_path=current_path_for_maya, scene_path=maya_scene, project=project)
 
 	# save render py file
 	render_rpr_file = "render_rpr_{}.py".format(filename) 
@@ -229,7 +223,7 @@ def main():
 	cmd_command = '''
 		set MAYA_CMD_FILE_OUTPUT=%cd%/Output/rpr_render_log.txt
 		set MAYA_SCRIPT_PATH=%cd%;%MAYA_SCRIPT_PATH%
-		set PYTHONPATH=%cd%;%cd%/RS2RPRConvertTool;%PYTHONPATH%
+		set PYTHONPATH=%cd%;%cd%/Vray2RPRConvertTool;%PYTHONPATH%
 		"C:\\Program Files\\Autodesk\\Maya{tool}\\bin\\Maya.exe" -command "python(\\"import {render_rpr_file} as render\\"); python(\\"render.main()\\");" 
 		'''.format(tool=args.tool, render_rpr_file=render_rpr_file.split('.')[0])
 	render_bat_file = "launch_rpr_render_{}.bat".format(filename)
@@ -285,13 +279,17 @@ def main():
 	output_files = os.listdir('Output')
 	for output_file in output_files:
 		files.update({output_file: open(os.path.join('Output', output_file), 'rb')})
+	output_files = [output_file for output_file in os.listdir('images') if os.path.isfile(os.path.join('images', output_file))]
+	for output_file in output_files:
+		if output_file.endswith('.jpg'):
+			files.update({output_file: open(os.path.join('images', output_file), 'rb')})
 	logger.info("Output files: {}".format(files))
 
 	# detect render status
 	status = "Unknown"
 	fail_reason = "Unknown"
 
-	images = glob.glob(os.path.join('Output' ,'*.jpg'))
+	images = glob.glob(os.path.join('Output' ,'*.jpg')) + glob.glob(os.path.join('images','*.jpg'))
 	if rc == 0 and len(images) > 1:
 		logger.info("Render status: success")
 		status = "Success"
@@ -299,18 +297,15 @@ def main():
 		logger.info("Render status: failure")
 		status = "Failure"
 		if rc == -1:
-			logger.info("Fail reason: redshift timeout expired")
-			fail_reason = "Redshift timeout expired"
+			logger.info("Fail reason: vray timeout expired")
+			fail_reason = "Vray timeout expired"
 		elif rc == -1:
 			rc = -1
 			logger.info("crash window - {}".format(list(error_window)[0]))
 			fail_reason = "crash window - {}".format(list(error_window)[0])
-		elif rc == -2:
+		elif rc == -3:
 			logger.info("Fail reason: rpr timeout expired")
 			fail_reason = "RPR timeout expired"
-		elif rc == -3:
-			logger.info("Fail reason: redshift timeout expired")
-			fail_reason = "Redshift timeout expired"
 		elif len(images) < 2:
 			rc = -1
 			logger.info("Fail reason: rendering failed, no output image")
