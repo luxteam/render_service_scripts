@@ -214,6 +214,7 @@ def main():
 	fail_reason = "Unknown"
 
 	images = glob.glob(os.path.join('Output' ,'*.jpg'))
+	images.extend(glob.glob(os.path.join('Output' ,'*.png')))
 	if rc == 0 and images:
 		logger.info("Render status: success")
 		status = "Success"
