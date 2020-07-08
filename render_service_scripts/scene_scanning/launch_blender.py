@@ -2,10 +2,13 @@ import argparse
 import logging
 import os
 import subprocess
+import json
+import requests
 
 import psutil
 
 from render_service_scripts.unpack import unpack_scene
+from requests.auth import HTTPBasicAuth
 
 # logging
 logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')
@@ -20,6 +23,25 @@ def find_blender_scene():
 				scene.append(os.path.join(rootdir, file))
 
 	return scene[0]
+
+
+def send_results(post_data, django_ip, login, password):
+	try_count = 0
+	while try_count < 3:
+		try:
+			response = requests.post(django_ip, data=post_data, auth=HTTPBasicAuth(login, password))
+			if response.status_code  == 200:
+				logger.info("POST request successfuly sent.")
+				break
+			else:
+				logger.info("POST reques failed, status code: " + str(response.status_code))
+				break
+		except Exception as e:
+			if try_count == 2:
+				logger.info("POST request try 3 failed. Finishing work.")
+				break
+			try_count += 1
+			logger.info("POST request failed. Retry ...")
 
 
 def main():
@@ -96,24 +118,41 @@ def main():
 
 	# update render status
 	logger.info("Finished scanning scene: {}".format(blender_scene))
-	# TODO collect and send data to render service
 
 	# detect render status
 	status = "Unknown"
 	fail_reason = "Unknown"
 
-	if rc == 0:
+	scene_info_exists = os.path.exists("scene_info.json")
+
+	if rc == 0 and scene_info_exists:
 		logger.info("Render status: success")
 		status = "Success"
 	else:
-		logger.info("Render status: failure")
+		logger.error("Render status: failure")
 		status = "Failure"
 		if rc == -1:
-			logger.info("Fail reason: timeout expired")
+			logger.error("Fail reason: timeout expired")
 			fail_reason = "Timeout expired"
+		elif scene_info_exists:
+			logger.error("Fail reason: no output info")
+			fail_reason = "No output info"
 		else:
-			logger.info("Fail reason: unknown")
+			rc = -1
+			logger.error("Fail reason: unknown")
 			fail_reason = "Unknown"
+
+	logger.info("Sending results")
+
+	post_data = {'status': status, 'fail_reason': fail_reason, 'id': args.id}
+
+	if os.path.exists("scene_info.json"):
+		with open("scene_info.json") as file:
+			data = json.load(file)
+
+		post_data.update(data)
+	
+	send_results(post_data, args.django_ip, args.login, args.password)
 
 	return rc
 
