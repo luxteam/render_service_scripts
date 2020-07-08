@@ -119,40 +119,31 @@ def main():
 	# update render status
 	logger.info("Finished scanning scene: {}".format(blender_scene))
 
-	# detect render status
-	status = "Unknown"
-	fail_reason = "Unknown"
-
 	scene_info_exists = os.path.exists("scene_info.json")
 
 	if rc == 0 and scene_info_exists:
 		logger.info("Render status: success")
-		status = "Success"
+
+		logger.info("Sending results")
+
+		post_data = {'status': 'Success', 'id': args.id}
+
+		if os.path.exists("scene_info.json"):
+			with open("scene_info.json") as file:
+				data = json.load(file)
+
+			post_data.update(data)
+		
+		send_results(post_data, args.django_ip, args.login, args.password)
 	else:
 		logger.error("Render status: failure")
-		status = "Failure"
 		if rc == -1:
 			logger.error("Fail reason: timeout expired")
-			fail_reason = "Timeout expired"
 		elif scene_info_exists:
 			logger.error("Fail reason: no output info")
-			fail_reason = "No output info"
 		else:
 			rc = -1
 			logger.error("Fail reason: unknown")
-			fail_reason = "Unknown"
-
-	logger.info("Sending results")
-
-	post_data = {'status': status, 'fail_reason': fail_reason, 'id': args.id}
-
-	if os.path.exists("scene_info.json"):
-		with open("scene_info.json") as file:
-			data = json.load(file)
-
-		post_data.update(data)
-	
-	send_results(post_data, args.django_ip, args.login, args.password)
 
 	return rc
 
