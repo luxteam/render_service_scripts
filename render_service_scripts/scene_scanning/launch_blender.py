@@ -53,7 +53,12 @@ def main():
 	parser.add_argument('--scene_name', required=True)
 	parser.add_argument('--login', required=True)
 	parser.add_argument('--password', required=True)
+	parser.add_argument('--action', required=True)
+	parser.add_argument('--options', required=True)
 	args = parser.parse_args()
+
+	args.action = args.action.lower()
+	options = json.loads(args.options)
 
 	# create output folder for logs
 	if not os.path.exists('Output'):
@@ -65,34 +70,39 @@ def main():
 	blender_scene = find_blender_scene()
 	logger.info("Found scene: {}".format(blender_scene))
 
-	# read blender scene scanning template
-	with open ("read_blender_configuration.py") as f:
+	# read or write blender scene scanning template
+	with open ("{}_blender_configuration.py".format(args.action)) as f:
 		blender_script_template = f.read()
 
 	# format template for current scene
-	blender_script = blender_script_template.format(res_path=os.getcwd(), scene_path=blender_scene)
+	if args.action == 'read':
+		blender_script = blender_script_template.format(res_path=os.getcwd(), scene_path=blender_scene)
+	elif args.action == 'write':
+		blender_script = blender_script_template.format(res_path=os.getcwd(), scene_path=blender_scene, 
+			border_max_x=options['border_max_x'], border_max_y=options['border_max_y'], border_min_x=options['border_min_x'], border_min_y=options['border_min_y'],
+			fps=options['fps'], fps_base=options['fps_base'], tile_x=options['tile_x'], tile_y=options['tile_y'], camera=options['active_camera'])
+	else:
+		logger.error("Unknown action: {}".format(args.action))
 
 	# scene name
 	split_name = os.path.basename(blender_scene).split(".")
 	filename = '.'.join(split_name[0:-1])
 
 	# save py file for scene reading
-	render_file = "read_{}.py".format(filename) 
+	render_file = "{action}_{filename}.py".format(action=args.action, filename=filename) 
 	with open(render_file, 'w') as f:
 		f.write(blender_script)
 
 	# save bat file
 	blender_path = "C:\\Program Files\\Blender Foundation\\Blender {tool}\\blender.exe".format(tool=args.tool)
 	cmd_command = '"{blender_path}" -b -P "{render_file}"'.format(blender_path=blender_path, render_file=render_file)
-	render_bat_file = "launch_read_{}.bat".format(filename)
-	with open(render_bat_file, 'w') as f:
+	action_bat_file = "launch_{action}_{filename}.bat".format(action=args.action, filename=filename)
+	with open(action_bat_file, 'w') as f:
 		f.write(cmd_command)
 
-	# starting scanning
-	logger.info("Starting scanning scene: {}".format(blender_scene))
-
-	# start render
-	p = psutil.Popen(render_bat_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+	# starting action
+	logger.info("Starting {action} action: {scene}".format(action=args.action, scene=blender_scene))
+	p = psutil.Popen(action_bat_file, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	
 	# catch timeout (30 minutes)
 	timeout = 1800
@@ -105,7 +115,6 @@ def main():
 			child.terminate()
 		p.terminate()
 
-
 	# save logs
 	with open(os.path.join('Output', "render_log.txt"), 'w', encoding='utf-8') as file:
 		stdout = stdout.decode("utf-8")
@@ -116,7 +125,6 @@ def main():
 		stderr = stderr.decode("utf-8")
 		file.write(stderr)
 
-	# update render status
 	logger.info("Finished scanning scene: {}".format(blender_scene))
 
 	scene_info_exists = os.path.exists("scene_info.json")
