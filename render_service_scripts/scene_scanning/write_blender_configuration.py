@@ -43,7 +43,7 @@ def set_render_device():
 	return device_name
 
 
-def init():
+def init(scene_path):
 	# open scene
 	bpy.ops.wm.open_mainfile(filepath=os.path.join(r"{res_path}", scene_path))
 	# get scene
@@ -57,7 +57,7 @@ def init():
 
 
 def render(scene_path):
-	scene = init()
+	scene = init(scene_path)
 
 
 	set_value(scene.rpr.limits, 'seconds', 1800)
@@ -78,15 +78,15 @@ def render(scene_path):
 		set_value(scene.render, 'tile_x', {tile_x})
 	if {tile_y}:
 		set_value(scene.render, 'tile_y', {tile_y})
-	if {camera}:
+	if "{camera}":
 		for obj in bpy.data.objects:
-			if (obj.type == 'CAMERA' obj.name == {camera}):
-				set_value(scene, 'camera', {camera})
+			if (obj.type == 'CAMERA' and obj.name == "{camera}"):
+				set_value(scene, 'camera', obj)
 
 	# write and reopen scene
 	bpy.ops.wm.save_as_mainfile(filepath=os.path.join(r"{res_path}", scene_path))
 	
-	scene = init()
+	scene = init(scene_path)
 
 	# scene configuration json
 	report = {{}}
