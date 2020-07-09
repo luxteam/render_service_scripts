@@ -44,6 +44,25 @@ def send_results(post_data, django_ip, login, password):
 			logger.info("POST request failed. Retry ...")
 
 
+def send_scene(post_data, files, django_ip, login, password):
+	try_count = 0
+	while try_count < 3:
+		try:
+			response = requests.post(django_ip, data=post_data, files=files, auth=HTTPBasicAuth(login, password))
+			if response.status_code  == 200:
+				logger.info("POST request successfuly sent.")
+				break
+			else:
+				logger.info("POST reques failed, status code: " + str(response.status_code))
+				break
+		except Exception as e:
+			if try_count == 2:
+				logger.info("POST request try 3 failed. Finishing work.")
+				break
+			try_count += 1
+			logger.info("POST request failed. Retry ...")
+
+
 def main():
 
 	parser = argparse.ArgumentParser()
@@ -130,6 +149,13 @@ def main():
 	scene_info_exists = os.path.exists("scene_info.json")
 
 	if rc == 0 and scene_info_exists:
+		if args.action == 'write':
+			files = {'scene': open(args.scene_name, 'rb')}
+
+			logger.info("Sending updated scene")
+			post_data = {'id': args.id}
+			send_scene(post_data, files, args.django_ip, args.login, args.password)
+
 		logger.info("Render status: success")
 
 		logger.info("Sending results")
