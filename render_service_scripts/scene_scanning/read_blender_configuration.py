@@ -65,7 +65,6 @@ def render(scene_path):
 	report['border_max_y'] = get_value(scene.render, 'border_max_y')
 	report['border_min_x'] = get_value(scene.render, 'border_min_x')
 	report['border_min_y'] = get_value(scene.render, 'border_min_y')
-	report['file_extension'] = get_value(scene.render, 'file_extension')
 	report['fps'] = get_value(scene.render, 'fps')
 	report['fps_base'] = get_value(scene.render, 'fps_base')
 	report['tile_x'] = get_value(scene.render, 'tile_x')
