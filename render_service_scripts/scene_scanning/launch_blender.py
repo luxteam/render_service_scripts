@@ -8,6 +8,7 @@ import requests
 import psutil
 
 from render_service_scripts.unpack import unpack_scene
+from render_service_scripts.pack import update_scene_in_archive
 from requests.auth import HTTPBasicAuth
 
 # logging
@@ -150,13 +151,14 @@ def main():
 
 	if rc == 0 and scene_info_exists:
 		if args.action == 'write':
+			update_scene_in_archive(args.scene_name, os.path.split(blender_scene)[1])
 			files = {'scene': open(args.scene_name, 'rb')}
 
 			logger.info("Sending updated scene")
 			post_data = {'id': args.id}
 			send_scene(post_data, files, args.django_ip, args.login, args.password)
 
-		logger.info("Render status: success")
+		logger.info("Scanning status: success")
 
 		logger.info("Sending results")
 
@@ -170,7 +172,7 @@ def main():
 		
 		send_results(post_data, args.django_ip, args.login, args.password)
 	else:
-		logger.error("Render status: failure")
+		logger.error("Scanning status: failure")
 		if rc == -1:
 			logger.error("Fail reason: timeout expired")
 		elif scene_info_exists:
