@@ -107,9 +107,7 @@ def main():
 	if args.action == 'read':
 		blender_script = blender_script_template.render(res_path=os.getcwd(), scene_path=blender_scene, options_structure=options_structure)
 	elif args.action == 'write':
-		blender_script = blender_script_template.format(res_path=os.getcwd(), scene_path=blender_scene, 
-			border_max_x=options['border_max_x'], border_max_y=options['border_max_y'], border_min_x=options['border_min_x'], border_min_y=options['border_min_y'],
-			fps=options['fps'], fps_base=options['fps_base'], tile_x=options['tile_x'], tile_y=options['tile_y'], camera=options['active_camera'])
+		blender_script = blender_script_template.render(res_path=os.getcwd(), scene_path=blender_scene, options_structure=options_structure, configuration_options=configuration_options)
 	else:
 		logger.error("Unknown action: {}".format(args.action))
 
