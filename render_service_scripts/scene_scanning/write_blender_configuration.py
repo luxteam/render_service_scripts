@@ -93,7 +93,13 @@ def render(scene_path):
 
 		{% if options_structure[option_structure].type == 'value' or options_structure[option_structure].type == 'readablevalue' %}
 
+		{% if options_structure[option_structure].value_type == 'string' %}
 	report['{{ option_structure }}']['value'] = get_value({{ options_structure[option_structure].location }}, '{{ options_structure[option_structure].name }}')
+		{% elif options_structure[option_structure].value_type == 'numeric' %}
+	report['{{ option_structure }}']['value'] = get_value({{ options_structure[option_structure].location }}, {{ options_structure[option_structure].name }})
+		{% elif options_structure[option_structure].value_type == 'boolean' %}
+	report['{{ option_structure }}']['value'] = get_value({{ options_structure[option_structure].location }}, '{{ options_structure[option_structure].name }}' == 'True')
+		{% endif %}
 
 		{% elif options_structure[option_structure].type == 'function' or options_structure[option_structure].type == 'readablefunction' %}
 
