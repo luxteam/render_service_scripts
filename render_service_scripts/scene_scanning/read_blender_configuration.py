@@ -65,25 +65,25 @@ def render(scene_path):
 	{% for option_structure in options_structure %}
 	report['{{ option_structure }}'] = {}
 
-		{% if options_structure[option_structure].type == 'value' %}
+		{% if options_structure[option_structure].type == 'value' or options_structure[option_structure].type == 'readablevalue' %}
 
 	report['{{ option_structure }}']['value'] = get_value({{ options_structure[option_structure].location }}, '{{ options_structure[option_structure].name }}')
 
-		{% elif options_structure[option_structure].type == 'function' %}
+		{% elif options_structure[option_structure].type == 'function' or options_structure[option_structure].type == 'readablefunction' %}
 
-	report['{{ option_structure }}']['elements'] = {{ options_structure[option_structure].location }}.{{ options_structure[option_structure].name }}(**{{ options_structure[option_structure].args }})
+	report['{{ option_structure }}']['elements'] = {{ options_structure[option_structure].location }}(**{{ options_structure[option_structure].read_args }})
 
 	if ('{{ option_structure }}' == 'missing_files'):
 		report['{{ option_structure }}']['elements'] = list(report['{{ option_structure }}']['elements'])
 
-		{% elif options_structure[option_structure].type == 'object' %}
+		{% elif options_structure[option_structure].type == 'object' or options_structure[option_structure].type == 'readableobject' %}
 
 	report['{{ option_structure }}']['elements'] = []
 
-	report['{{ option_structure }}']['value'] = get_value({{ options_structure[option_structure].selected_location }}, '{{ options_structure[option_structure].selected_name }}')
+	report['{{ option_structure }}']['value'] = get_value({{ options_structure[option_structure].read_selected_location }}, '{{ options_structure[option_structure].read_selected_name }}')
 
 
-	for obj in {{ options_structure[option_structure].location }}.{{ options_structure[option_structure].name }}:
+	for obj in {{ options_structure[option_structure].location }}:
 		if (obj.type == '{{ options_structure[option_structure].obj_type }}'):
 			report['{{ option_structure }}']['elements'].append(obj.name)
 
