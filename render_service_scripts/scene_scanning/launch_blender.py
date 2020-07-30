@@ -10,6 +10,7 @@ import psutil
 from render_service_scripts.unpack import unpack_scene
 from render_service_scripts.pack import update_scene_in_archive
 from requests.auth import HTTPBasicAuth
+import jinja2
 
 # logging
 logging.basicConfig(filename="launch_render_log.txt", level=logging.INFO, format='%(asctime)s :: %(levelname)s :: %(message)s')
@@ -28,9 +29,11 @@ def find_blender_scene():
 
 def send_results(post_data, django_ip, login, password):
 	try_count = 0
+
+	headers = {'Content-type': 'application/json', 'Accept': 'text/plain', 'Content-Encoding': 'utf-8'}
 	while try_count < 3:
 		try:
-			response = requests.post(django_ip, data=post_data, auth=HTTPBasicAuth(login, password))
+			response = requests.post(django_ip, data=json.dumps(post_data), headers=headers, auth=HTTPBasicAuth(login, password))
 			if response.status_code  == 200:
 				logger.info("POST request successfuly sent.")
 				break
@@ -74,11 +77,13 @@ def main():
 	parser.add_argument('--login', required=True)
 	parser.add_argument('--password', required=True)
 	parser.add_argument('--action', required=True)
-	parser.add_argument('--options', required=True)
+	parser.add_argument('--configuration_options', required=True)
+	parser.add_argument('--options_structure', required=True)
 	args = parser.parse_args()
 
 	args.action = args.action.lower()
-	options = json.loads(args.options)
+	configuration_options = json.loads(args.configuration_options)
+	options_structure = json.loads(args.options_structure)
 
 	# create output folder for logs
 	if not os.path.exists('Output'):
@@ -91,16 +96,18 @@ def main():
 	logger.info("Found scene: {}".format(blender_scene))
 
 	# read or write blender scene scanning template
-	with open ("{}_blender_configuration.py".format(args.action)) as f:
-		blender_script_template = f.read()
+	env = jinja2.Environment(
+		loader=jinja2.PackageLoader('launch_blender', '.'),
+		autoescape=True
+	)
+
+	blender_script_template = env.get_template("{}_blender_configuration.py".format(args.action))
 
 	# format template for current scene
 	if args.action == 'read':
-		blender_script = blender_script_template.format(res_path=os.getcwd(), scene_path=blender_scene)
+		blender_script = blender_script_template.render(res_path=os.getcwd(), scene_path=blender_scene, options_structure=options_structure)
 	elif args.action == 'write':
-		blender_script = blender_script_template.format(res_path=os.getcwd(), scene_path=blender_scene, 
-			border_max_x=options['border_max_x'], border_max_y=options['border_max_y'], border_min_x=options['border_min_x'], border_min_y=options['border_min_y'],
-			fps=options['fps'], fps_base=options['fps_base'], tile_x=options['tile_x'], tile_y=options['tile_y'], camera=options['active_camera'])
+		blender_script = blender_script_template.render(res_path=os.getcwd(), scene_path=blender_scene, options_structure=options_structure, configuration_options=configuration_options)
 	else:
 		logger.error("Unknown action: {}".format(args.action))
 

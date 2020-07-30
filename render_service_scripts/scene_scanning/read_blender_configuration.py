@@ -18,7 +18,7 @@ def set_value(path, name, value):
 	if hasattr(path, name):
 		setattr(path, name, value)
 	else:
-		print("No attribute found {{}}".format(name))
+		print("No attribute found {}".format(name))
 
 
 def get_value(path, name):
@@ -46,7 +46,7 @@ def set_render_device():
 def render(scene_path):
 
 	# open scene
-	bpy.ops.wm.open_mainfile(filepath=os.path.join(r"{res_path}", scene_path))
+	bpy.ops.wm.open_mainfile(filepath=os.path.join('{{ res_path }}', scene_path))
 
 	# get scene
 	scene = bpy.context.scene
@@ -60,29 +60,40 @@ def render(scene_path):
 	set_value(scene.rpr.limits, 'seconds', 1800)
 
 	# scene configuration json
-	report = {{}}
-	report['border_max_x'] = get_value(scene.render, 'border_max_x')
-	report['border_max_y'] = get_value(scene.render, 'border_max_y')
-	report['border_min_x'] = get_value(scene.render, 'border_min_x')
-	report['border_min_y'] = get_value(scene.render, 'border_min_y')
-	report['fps'] = get_value(scene.render, 'fps')
-	report['fps_base'] = get_value(scene.render, 'fps_base')
-	report['tile_x'] = get_value(scene.render, 'tile_x')
-	report['tile_y'] = get_value(scene.render, 'tile_y')
 
-	# convert set of missing files to list
-	report['missing_files'] = list(bpy.ops.file.find_missing_files())
+	report = {}
+	{% for option_structure in options_structure %}
+	report['{{ option_structure }}'] = {}
 
-	report['active_camera'] = scene.camera.name
-	report['cameras'] = []
-	for obj in bpy.data.objects:
-		if (obj.type == 'CAMERA'):
-			report['cameras'].append(obj.name)
+		{% if options_structure[option_structure].type == 'value' or options_structure[option_structure].type == 'readablevalue' %}
 
-	with open(os.path.join(r"{res_path}", "scene_info.json"), 'w') as f:
+	report['{{ option_structure }}']['value'] = get_value({{ options_structure[option_structure].location }}, '{{ options_structure[option_structure].name }}')
+
+		{% elif options_structure[option_structure].type == 'function' or options_structure[option_structure].type == 'readablefunction' %}
+
+	report['{{ option_structure }}']['elements'] = {{ options_structure[option_structure].location }}(**{{ options_structure[option_structure].read_args }})
+
+	if ('{{ option_structure }}' == 'missing_files'):
+		report['{{ option_structure }}']['elements'] = list(report['{{ option_structure }}']['elements'])
+
+		{% elif options_structure[option_structure].type == 'object' or options_structure[option_structure].type == 'readableobject' %}
+
+	report['{{ option_structure }}']['elements'] = []
+
+	report['{{ option_structure }}']['value'] = get_value({{ options_structure[option_structure].read_selected_location }}, '{{ options_structure[option_structure].read_selected_name }}')
+
+
+	for obj in {{ options_structure[option_structure].location }}:
+		if (obj.type == '{{ options_structure[option_structure].obj_type }}'):
+			report['{{ option_structure }}']['elements'].append(obj.name)
+
+		{% endif  %}
+	{% endfor %}
+
+	with open(os.path.join('{{ res_path }}', "scene_info.json"), 'w') as f:
 		json.dump(report, f, indent=' ')
 
 
 if __name__ == "__main__":
 	initializeRPR()
-	render(r'{scene_path}')
+	render('{{ scene_path }}')
