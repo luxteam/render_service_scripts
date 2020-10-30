@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 def main():
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument('--version')
+	parser.add_argument('--url')
 	parser.add_argument('--jenkins_username')
 	parser.add_argument('--jenkins_password')
 	args = parser.parse_args()
@@ -22,8 +22,7 @@ def main():
 	try_count = 0
 	while try_count < 3:
 		try:
-			response = requests.get("https://rpr.cis.luxoft.com/job/RadeonProViewerAuto/job/master/{}/artifact/RprViewer_Windows.zip"\
-				.format(args.version), auth=(args.jenkins_username, args.jenkins_password), verify=False, timeout=None)
+			response = requests.get(args.url), auth=(args.jenkins_username, args.jenkins_password), verify=False, timeout=None)
 			original_size = response.headers['Content-Length']
 			logger.info("Original size: " + original_size)
 		
