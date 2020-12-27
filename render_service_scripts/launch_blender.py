@@ -78,6 +78,7 @@ def main():
 	parser.add_argument('--django_ip', required=True)
 	parser.add_argument('--id', required=True)
 	parser.add_argument('--tool', required=True)
+	parser.add_argument('--engine', required=True)
 	parser.add_argument('--min_samples', required=True)
 	parser.add_argument('--max_samples', required=True)
 	parser.add_argument('--noise_threshold', required=True)
@@ -107,7 +108,7 @@ def main():
 
 	# format template for current scene
 	blender_script = blender_script_template.format(min_samples=args.min_samples, max_samples=args.max_samples, noise_threshold=args.noise_threshold, \
-		width = args.width, height = args.height, res_path=os.getcwd(), startFrame=args.startFrame, endFrame=args.endFrame, scene_path=blender_scene)
+		width = args.width, height = args.height, res_path=os.getcwd(), startFrame=args.startFrame, endFrame=args.endFrame, scene_path=blender_scene, engine=args.engine)
 
 	# scene name
 	split_name = os.path.basename(blender_scene).split(".")

@@ -136,6 +136,7 @@ def main():
 	parser.add_argument('--django_ip', required=True)
 	parser.add_argument('--id', required=True)
 	parser.add_argument('--tool', required=True)
+	parser.add_argument('--engine', required=True)
 	parser.add_argument('--min_samples', required=True)
 	parser.add_argument('--max_samples', required=True)
 	parser.add_argument('--noise_threshold', required=True)
@@ -182,7 +183,7 @@ def main():
 			maya_script_template = f.read()
 	
 	maya_script = maya_script_template.format(min_samples=args.min_samples, max_samples=args.max_samples, noise_threshold=args.noise_threshold, \
-		width = args.width, height = args.height, res_path=current_path_for_maya, startFrame=args.startFrame, endFrame=args.endFrame, scene_path=maya_scene, project=project)
+		width = args.width, height = args.height, res_path=current_path_for_maya, startFrame=args.startFrame, endFrame=args.endFrame, scene_path=maya_scene, project=project, engine=args.engine)
 
 	# scene name
 	filename = os.path.basename(maya_scene).split(".")[0]
