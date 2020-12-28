@@ -75,10 +75,10 @@ def render(scene_path):
 	if {height}:
 		set_value(bpy.context.scene.render, 'resolution_y', {height})
 
-	if {engine}:
-		if {engine} == 'Tahoe':
+	if '{engine}':
+		if '{engine}' == 'Tahoe':
 			set_value(scene.rpr, 'render_quality', 'FULL')
-		elif {engine} == 'Northstar':
+		elif '{engine}' == 'Northstar':
 			set_value(scene.rpr, 'render_quality', 'FULL2')
 
 	# image format

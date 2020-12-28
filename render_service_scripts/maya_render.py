@@ -45,10 +45,10 @@ def rpr_render():
     if {height}:
         cmds.setAttr("defaultResolution.height", {height})
 
-    if {engine}:
-        if {engine} == 'Tahoe':
+    if '{engine}':
+        if '{engine}' == 'Tahoe':
             cmds.setAttr('RadeonProRenderGlobals.tahoeVersion', 1)
-        elif {engine} == 'Northstar':
+        elif '{engine}' == 'Northstar':
             cmds.setAttr('RadeonProRenderGlobals.tahoeVersion', 2)
 
     cmds.optionVar(rm="RPR_DevicesSelected")
