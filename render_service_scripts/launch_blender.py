@@ -78,6 +78,7 @@ def main():
 	parser.add_argument('--django_ip', required=True)
 	parser.add_argument('--id', required=True)
 	parser.add_argument('--tool', required=True)
+	parser.add_argument('--engine', required=True)
 	parser.add_argument('--min_samples', required=True)
 	parser.add_argument('--max_samples', required=True)
 	parser.add_argument('--noise_threshold', required=True)
@@ -107,7 +108,7 @@ def main():
 
 	# format template for current scene
 	blender_script = blender_script_template.format(min_samples=args.min_samples, max_samples=args.max_samples, noise_threshold=args.noise_threshold, \
-		width = args.width, height = args.height, res_path=os.getcwd(), startFrame=args.startFrame, endFrame=args.endFrame, scene_path=blender_scene)
+		width = args.width, height = args.height, res_path=os.getcwd(), startFrame=args.startFrame, endFrame=args.endFrame, scene_path=blender_scene, engine=args.engine)
 
 	# scene name
 	split_name = os.path.basename(blender_scene).split(".")
@@ -157,7 +158,7 @@ def main():
 				file.write(line)
 				file.write("\n")
 				if line.startswith("Fra") and "Samples" in line:
-					samples_per_frame = int(line.split("|")[3].strip().rsplit(" ", 1)[-1].split("/")[1])
+					samples_per_frame = int(line.split("|")[3].strip().rsplit(" ", 1)[-1].split("/")[1].split(".")[0])
 					all_samples = int(samples_per_frame * (int(args.endFrame) - int(args.startFrame) + 1))
 					frame_number = int(line.split(" ", 1)[0].split(":")[1])
 					current_samples = int(line.rsplit("|")[3].strip().rsplit(" ", 1)[-1].split("/")[0])
