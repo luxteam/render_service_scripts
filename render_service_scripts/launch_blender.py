@@ -157,7 +157,7 @@ def main():
 				file.write(line)
 				file.write("\n")
 				if line.startswith("Fra") and "Samples" in line:
-					samples_per_frame = int(line.split("|")[3].strip().rsplit(" ", 1)[-1].split("/")[1])
+					samples_per_frame = int(line.split("|")[3].strip().rsplit(" ", 1)[-1].split("/")[1].split(".")[0])
 					all_samples = int(samples_per_frame * (int(args.endFrame) - int(args.startFrame) + 1))
 					frame_number = int(line.split(" ", 1)[0].split(":")[1])
 					current_samples = int(line.rsplit("|")[3].strip().rsplit(" ", 1)[-1].split("/")[0])
