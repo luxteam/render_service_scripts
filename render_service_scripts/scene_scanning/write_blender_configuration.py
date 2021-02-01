@@ -45,7 +45,7 @@ def set_render_device():
 
 def init(scene_path):
 	# open scene
-	bpy.ops.wm.open_mainfile(filepath=os.path.join('{{ res_path }}', scene_path))
+	bpy.ops.wm.open_mainfile(filepath=os.path.join(r'{{ res_path }}', scene_path))
 	# get scene
 	scene = bpy.context.scene
 	# enable rpr
@@ -128,4 +128,4 @@ def render(scene_path):
 
 if __name__ == "__main__":
 	initializeRPR()
-	render('{{ scene_path }}')
+	render(r'{{ scene_path }}')
